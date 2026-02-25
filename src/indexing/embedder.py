@@ -31,10 +31,15 @@ def build_document(row: pd.Series) -> str:
     location = row.get("location") or "unknown location"
 
     cuisines = row.get("cuisines", [])
-    if isinstance(cuisines, list):
+    if isinstance(cuisines, (list, tuple)):
         cuisine_str = ", ".join(cuisines) if cuisines else "various cuisines"
     else:
-        cuisine_str = str(cuisines) if cuisines else "various cuisines"
+        # numpy arrays (from parquet) — convert to list first
+        import numpy as np
+        if isinstance(cuisines, np.ndarray):
+            cuisine_str = ", ".join(cuisines.tolist()) if cuisines.size > 0 else "various cuisines"
+        else:
+            cuisine_str = str(cuisines) if cuisines else "various cuisines"
 
     rate = row.get("rate")
     votes = row.get("votes", 0)
