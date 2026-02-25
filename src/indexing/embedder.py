@@ -9,8 +9,6 @@ Usage:
 
 from __future__ import annotations
 
-import math
-
 import pandas as pd
 
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
@@ -48,9 +46,9 @@ def build_document(row: pd.Series) -> str:
     online_order = row.get("online_order", False)
     book_table = row.get("book_table", False)
 
-    # Handle pandas nullable types (NA values)
-    rate_is_na = rate is None or (isinstance(rate, float) and math.isnan(rate))
-    cost_is_na = approx_cost is None or (isinstance(approx_cost, float) and math.isnan(approx_cost))
+    # Handle all NA variants: None, np.nan, pd.NA, pd.NaT
+    rate_is_na = pd.isna(rate)
+    cost_is_na = pd.isna(approx_cost)
 
     rate_str = f"{rate}/5" if not rate_is_na else "unrated"
     cost_str = f"₹{int(approx_cost)}" if not cost_is_na else "not specified"
