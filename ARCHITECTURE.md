@@ -8,8 +8,8 @@ ingests the Zomato dataset from Hugging Face, processes and indexes it, then
 uses an LLM to generate context-aware, natural-language recommendations.
 
 **Dataset:** [ManikaSaini/zomato-restaurant-recommendation](https://huggingface.co/datasets/ManikaSaini/zomato-restaurant-recommendation)
-**LLM:** Claude (claude-sonnet-4-6) via the Anthropic SDK
-**Stack:** Python · FastAPI · Pandas · ChromaDB · Anthropic SDK
+**LLM:** Groq (llama-3.3-70b-versatile) via the Groq SDK
+**Stack:** Python · FastAPI · Pandas · ChromaDB · Groq SDK · React · Vite
 
 ---
 
@@ -36,10 +36,10 @@ uses an LLM to generate context-aware, natural-language recommendations.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Client / User                            │
-│         (CLI · REST API · Future Web UI)                        │
+│                     UI Layer  (React + Vite)                    │
+│         Preference form · Results cards · Loading states        │
 └────────────────────────┬────────────────────────────────────────┘
-                         │  User Preferences
+                         │  HTTP (fetch / axios)
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                      API Layer  (FastAPI)                        │
@@ -226,7 +226,7 @@ src/
 
 ### Phase 5 — LLM Integration
 
-**Goal:** Use Claude to generate a natural-language, personalized recommendation
+**Goal:** Use Groq to generate a natural-language, personalized recommendation
 response from the top candidates and the original user preferences.
 
 **Components:**
@@ -235,7 +235,7 @@ response from the top candidates and the original user preferences.
 src/
   llm/
     prompt_builder.py  # Construct system + user prompt
-    claude_client.py   # Anthropic SDK wrapper
+    groq_client.py     # Groq SDK wrapper
     response_parser.py # Parse structured JSON from LLM output
 ```
 
@@ -277,7 +277,7 @@ USER:
   }
 ```
 
-**LLM call config:** `model=claude-sonnet-4-6`, `max_tokens=1024`, `temperature=0.3`
+**LLM call config:** `model=llama-3.3-70b-versatile`, `max_tokens=1024`, `temperature=0.3`
 
 ---
 
@@ -338,6 +338,51 @@ src/
 
 ---
 
+### Phase 7 — UI Layer
+
+**Goal:** A clean, responsive web interface so users can submit preferences and
+browse recommendations without touching the API directly.
+
+**Tech:** React 18 · Vite · Tailwind CSS
+
+**Components:**
+
+```
+ui/
+  src/
+    components/
+      PreferenceForm.jsx   # Cuisine, location, budget, rating, free-text inputs
+      RecommendationCard.jsx  # Single restaurant result card
+      ResultsList.jsx      # Renders list of RecommendationCards
+      LoadingSpinner.jsx   # Shown while API call is in flight
+    pages/
+      Home.jsx             # PreferenceForm + ResultsList wired together
+    api/
+      recommend.js         # fetch wrapper for POST /recommend
+    App.jsx
+    main.jsx
+  index.html
+  vite.config.js
+  tailwind.config.js
+  package.json
+```
+
+**Key features:**
+
+1. **Preference form** — dropdowns for cuisine & meal type, text inputs for location, sliders for budget & min rating, free-text field
+2. **Results view** — card per restaurant showing name, location, cuisine, rating, cost, "why" blurb, and highlight dish
+3. **Summary banner** — displays the LLM-generated conversational summary above the cards
+4. **Loading & error states** — spinner during API call, inline error message on failure
+5. **CORS** — FastAPI middleware already configured to accept requests from the Vite dev server (`localhost:5173`)
+
+**Dev setup:**
+```
+cd ui && npm install && npm run dev   # Vite dev server on :5173
+# FastAPI backend running on :8000
+```
+
+---
+
 ## Directory Structure
 
 ```
@@ -345,7 +390,7 @@ first-genAI-project/
 ├── ARCHITECTURE.md
 ├── README.md                    # (Phase 6)
 ├── pyproject.toml               # Dependencies & project metadata
-├── .env.example                 # ANTHROPIC_API_KEY, HF_TOKEN
+├── .env.example                 # GROQ_API_KEY, HF_TOKEN
 │
 ├── data/
 │   ├── raw/                     # Original Hugging Face download
@@ -372,7 +417,7 @@ first-genAI-project/
 │   │   └── engine.py
 │   ├── llm/
 │   │   ├── prompt_builder.py
-│   │   ├── claude_client.py
+│   │   ├── groq_client.py
 │   │   └── response_parser.py
 │   └── api/
 │       ├── main.py
@@ -380,6 +425,24 @@ first-genAI-project/
 │       └── routes/
 │           ├── recommend.py
 │           └── meta.py
+│
+├── ui/                          # Phase 7 — React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── PreferenceForm.jsx
+│   │   │   ├── RecommendationCard.jsx
+│   │   │   ├── ResultsList.jsx
+│   │   │   └── LoadingSpinner.jsx
+│   │   ├── pages/
+│   │   │   └── Home.jsx
+│   │   ├── api/
+│   │   │   └── recommend.js
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   └── package.json
 │
 └── tests/
     ├── test_preprocessing.py
@@ -432,15 +495,17 @@ User Request
 | `sentence-transformers`        | Local embeddings            | Free, no API key, good quality for semantic search |
 | ChromaDB                       | Vector store                | Embedded, no extra infra, metadata filtering built-in |
 | FastAPI                        | REST API                    | Async, automatic OpenAPI docs, Pydantic-native     |
-| Anthropic SDK (Claude)         | LLM recommendations         | Structured JSON output, reliable reasoning         |
+| Groq SDK (llama-3.3-70b)       | LLM recommendations         | Very fast inference, free tier, OpenAI-compatible  |
 | Pydantic v2                    | Data validation             | Type safety across all layers                      |
+| React 18 + Vite                | Frontend UI                 | Fast dev server, component-based, easy API wiring  |
+| Tailwind CSS                   | UI styling                  | Utility-first, no custom CSS needed                |
 
 ---
 
 ## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=...   # Required — Claude API access
+GROQ_API_KEY=...        # Required — Groq API access
 HF_TOKEN=...            # Optional — needed if dataset becomes gated
 ```
 
@@ -454,5 +519,6 @@ HF_TOKEN=...            # Optional — needed if dataset becomes gated
 | 2     | Vector Store & Indexing     | ChromaDB collection + embeddings        |
 | 3     | Preference Parsing          | `UserPreference` model + query builder  |
 | 4     | Recommendation Engine       | Top-5 ranked `RestaurantCandidate` list |
-| 5     | LLM Integration             | Natural-language recommendation JSON   |
+| 5     | LLM Integration             | Natural-language recommendation JSON (Groq) |
 | 6     | API Layer                   | FastAPI service, fully wired end-to-end |
+| 7     | UI Layer                    | React + Vite frontend, talks to Phase 6 API |
