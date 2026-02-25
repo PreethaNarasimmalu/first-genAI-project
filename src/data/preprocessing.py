@@ -121,13 +121,18 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
 
     # 1. Rename awkward column names
     df.rename(columns=COLUMN_RENAMES, inplace=True)
+    if "approx_cost(for two people)" in df.columns:
+        df.rename(columns={"approx_cost(for two people)": "approx_cost"}, inplace=True)
 
-    # 2. Normalize typed fields
+    # 2. Drop exact duplicates BEFORE list-type conversions (lists are unhashable)
+    before = len(df)
+    df.drop_duplicates(inplace=True)
+    print(f"Dropped {before - len(df)} exact duplicate rows.")
+
+    # 3. Normalize typed fields
     if "rate" in df.columns:
         df["rate"] = _normalize_rate(df["rate"])
 
-    if "approx_cost(for two people)" in df.columns:
-        df.rename(columns={"approx_cost(for two people)": "approx_cost"}, inplace=True)
     if "approx_cost" in df.columns:
         df["approx_cost"] = _normalize_cost(df["approx_cost"])
 
@@ -142,11 +147,6 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
 
     if "votes" in df.columns:
         df["votes"] = _normalize_votes(df["votes"])
-
-    # 3. Drop exact duplicates
-    before = len(df)
-    df.drop_duplicates(inplace=True)
-    print(f"Dropped {before - len(df)} exact duplicate rows.")
 
     # 4. Flag near-duplicates (same name + location) — keep first occurrence
     if {"name", "location"}.issubset(df.columns):
