@@ -1,0 +1,27 @@
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Data files (large, generated)
+data/raw/
+data/clean/
+data/vectordb/
+
+# Node / UI
+ui/node_modules/
+ui/dist/
+
+# Misc
+.DS_Store
+*.log
