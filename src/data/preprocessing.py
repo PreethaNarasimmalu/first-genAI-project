@@ -19,14 +19,10 @@ Usage:
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 import pandas as pd
 
-from src.data.ingestion import RAW_PARQUET, ingest
-
-CLEAN_DIR = Path("data/clean")
-CLEAN_PARQUET = CLEAN_DIR / "restaurants.parquet"
+from src.data.ingestion import ingest
 
 # Raw → clean column rename map (only what needs renaming)
 COLUMN_RENAMES: dict[str, str] = {
@@ -161,36 +157,13 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def save_clean(df: pd.DataFrame, path: Path = CLEAN_PARQUET) -> Path:
-    """Persist the cleaned DataFrame to Parquet.
-
-    Note: list-type columns (cuisines) are stored as object dtype;
-    Parquet handles them natively via Arrow's list type.
-    """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(path, index=False)
-    print(f"Clean data saved → {path}")
-    return path
-
-
-def load_clean(path: Path = CLEAN_PARQUET) -> pd.DataFrame:
-    """Load the cleaned Parquet file."""
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Clean data not found at {path}. Run preprocessing first."
-        )
-    return pd.read_parquet(path)
-
-
-def run_pipeline(force_ingest: bool = False) -> pd.DataFrame:
-    """End-to-end Phase 1 pipeline: ingest → preprocess → save."""
-    raw_df = ingest(force=force_ingest)
-    clean_df = preprocess(raw_df)
-    save_clean(clean_df)
-    return clean_df
+def run_pipeline() -> pd.DataFrame:
+    """End-to-end Phase 1 pipeline: stream → preprocess (no disk writes)."""
+    raw_df = ingest()
+    return preprocess(raw_df)
 
 
 if __name__ == "__main__":
     clean = run_pipeline()
-    print("\nSample output:")
+    print("\nPreprocessing complete — sample output:")
     print(clean[["name", "location", "rate", "approx_cost", "cuisines"]].head(5).to_string())
