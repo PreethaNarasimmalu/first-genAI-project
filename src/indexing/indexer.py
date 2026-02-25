@@ -38,8 +38,11 @@ def _row_to_metadata(row: pd.Series) -> dict[str, Any]:
         Flat dict of filterable metadata fields.
     """
     cuisines = row.get("cuisines", [])
-    if isinstance(cuisines, list):
+    import numpy as np
+    if isinstance(cuisines, (list, tuple)):
         cuisine_str = ", ".join(cuisines)
+    elif isinstance(cuisines, np.ndarray):
+        cuisine_str = ", ".join(cuisines.tolist()) if cuisines.size > 0 else ""
     else:
         cuisine_str = str(cuisines) if cuisines else ""
 
