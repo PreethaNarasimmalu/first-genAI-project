@@ -19,8 +19,11 @@ from src.preferences.models import UserPreference
 
 _SYSTEM_PROMPT = (
     "You are an expert restaurant concierge for Bangalore, India. "
-    "Given a list of candidate restaurants and user preferences, "
-    "recommend the best options with clear, personalised reasoning. "
+    "You will be given a list of candidate restaurants retrieved from a real dataset. "
+    "Your job is to rank and present ONLY those restaurants — do NOT invent, add, or "
+    "substitute any restaurant not explicitly listed in the candidates. "
+    "Every restaurant in your response must appear verbatim in the candidate list. "
+    "Use only the fields provided (name, location, cuisine, rating, cost, dishes). "
     "Always respond with a single valid JSON object — no prose before or "
     "after it, no markdown code fences, just the raw JSON."
 )
@@ -104,7 +107,10 @@ def build_prompts(
     """
     user_prompt = (
         f"User preferences:\n{_format_preferences(prefs)}\n\n"
-        f"Top candidate restaurants:\n{_format_candidates(candidates)}\n\n"
+        f"Candidate restaurants (from the real Zomato dataset — use ONLY these):\n"
+        f"{_format_candidates(candidates)}\n\n"
+        f"IMPORTANT: Recommend ONLY from the candidates listed above. "
+        f"Do not add, invent, or substitute any other restaurant.\n\n"
         f"Respond with a JSON object matching exactly this schema:\n{_JSON_SCHEMA}"
     )
     return _SYSTEM_PROMPT, user_prompt
