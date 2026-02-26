@@ -19,10 +19,13 @@ Usage:
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 import pandas as pd
 
 from src.data.ingestion import ingest
+
+CLEAN_PARQUET = Path(__file__).resolve().parents[2] / "data" / "clean" / "restaurants.parquet"
 
 # Raw → clean column rename map (only what needs renaming)
 COLUMN_RENAMES: dict[str, str] = {
@@ -165,5 +168,8 @@ def run_pipeline() -> pd.DataFrame:
 
 if __name__ == "__main__":
     clean = run_pipeline()
-    print("\nPreprocessing complete — sample output:")
+    CLEAN_PARQUET.parent.mkdir(parents=True, exist_ok=True)
+    clean.to_parquet(CLEAN_PARQUET, index=False)
+    print(f"\nSaved {len(clean)} rows to {CLEAN_PARQUET}")
+    print("\nSample output:")
     print(clean[["name", "location", "rate", "approx_cost", "cuisines"]].head(5).to_string())
