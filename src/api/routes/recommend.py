@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, Request
 from src.engine.engine import recommend as run_engine
 from src.llm.groq_client import call_llm
 from src.llm.prompt_builder import build_prompts
-from src.llm.response_parser import RecommendationResponse, parse_response
+from src.llm.response_parser import RecommendationResponse, RecommendationItem, parse_response
 from src.preferences.models import UserPreference
 
 logger = logging.getLogger(__name__)
@@ -63,12 +63,9 @@ def recommend(request: Request, body: UserPreference) -> RecommendationResponse:
     candidates = run_engine(body, collection=collection)
 
     if not candidates:
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                "No restaurants found matching your preferences. "
-                "Try relaxing your filters (e.g. higher budget, broader location)."
-            ),
+        return RecommendationResponse(
+            recommendations=[],
+            summary="No restaurants found matching your preferences. Try relaxing your filters (e.g. higher budget, broader location).",
         )
 
     logger.info("Engine returned %d candidates.", len(candidates))
@@ -108,12 +105,9 @@ def recommend(request: Request, body: UserPreference) -> RecommendationResponse:
     ]
 
     if not result.recommendations:
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                "No restaurants found matching your preferences. "
-                "Try relaxing your filters (e.g. different cuisine, broader location)."
-            ),
+        return RecommendationResponse(
+            recommendations=[],
+            summary="No restaurants found matching your preferences. Try relaxing your filters (e.g. different cuisine, broader location).",
         )
 
     logger.info("Returning %d recommendations.", len(result.recommendations))
