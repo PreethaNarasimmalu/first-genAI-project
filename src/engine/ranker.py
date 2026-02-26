@@ -120,13 +120,22 @@ def rank(
         List of up to ``top_n`` RestaurantCandidate objects, sorted by
         composite score descending.
     """
-    # --- Deduplication -------------------------------------------------------
+    # --- Deduplication (merge meal_types) ------------------------------------
+    # A restaurant may have multiple rows in ChromaDB — one per meal_type
+    # (e.g. "Mainland China" appears as both Dine-out and Buffet). Keep the
+    # row with the best semantic distance for scoring purposes, but collect
+    # ALL meal_types so the final candidate reflects every dining option the
+    # restaurant offers.
     seen: dict[tuple[str, str], dict[str, Any]] = {}
+    all_meal_types: dict[tuple[str, str], list[str]] = {}
     for r in raw_results:
         m = r["metadata"]
         key = (m.get("name", "").strip().lower(), m.get("location", "").strip().lower())
         if key not in seen or r["distance"] < seen[key]["distance"]:
             seen[key] = r
+        mt = m.get("meal_type", "").strip()
+        if mt and mt not in all_meal_types.get(key, []):
+            all_meal_types.setdefault(key, []).append(mt)
 
     unique = list(seen.values())
 
@@ -138,6 +147,7 @@ def rank(
     candidates: list[RestaurantCandidate] = []
     for r, nv in zip(unique, norm_votes):
         m = r["metadata"]
+        key = (m.get("name", "").strip().lower(), m.get("location", "").strip().lower())
 
         sem_sim = _semantic_similarity(r["distance"])
         norm_rating = float(m.get("rate", 0.0)) / 5.0
@@ -150,6 +160,9 @@ def rank(
             + 0.1 * price_score
         )
 
+        # Merge all meal_types seen for this (name, location) pair.
+        merged_meal_type = ", ".join(all_meal_types.get(key, [m.get("meal_type", "")]))
+
         candidates.append(RestaurantCandidate(
             name=str(m.get("name", "")),
             location=str(m.get("location", "")),
@@ -161,7 +174,7 @@ def rank(
             online_order=bool(m.get("online_order", False)),
             book_table=bool(m.get("book_table", False)),
             dish_liked=str(m.get("dish_liked", "")),
-            meal_type=str(m.get("meal_type", "")),
+            meal_type=merged_meal_type,
             city=str(m.get("city", "")),
             score=round(score, 4),
             distance=round(r["distance"], 4),
