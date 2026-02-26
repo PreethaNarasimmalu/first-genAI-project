@@ -1,11 +1,13 @@
 /**
- * RecommendationCard — a single restaurant recommendation.
- * Styled like a Zomato restaurant listing card.
+ * RecommendationCard — compact restaurant card with expandable details.
+ *
+ * Default view: rank, name, location, rating, cost, cuisine tags.
+ * Expanded view: adds "Why this?" and "Must Try" sections.
  *
  * Props:
- *   rec  — RecommendationItem from the API
- *            { rank, name, location, cuisine, rating, approx_cost, why, highlight }
+ *   rec  — { rank, name, location, cuisine, rating, approx_cost, why, highlight }
  */
+import { useState } from 'react'
 
 function RatingBadge({ rating }) {
   const color =
@@ -28,11 +30,12 @@ function RankBadge({ rank }) {
 }
 
 export default function RecommendationCard({ rec }) {
+  const [expanded, setExpanded] = useState(false)
   const cuisines = rec.cuisine.split(',').map(c => c.trim()).filter(Boolean)
 
   return (
     <article
-      className="bg-white rounded-2xl shadow-card hover:shadow-card-hover cursor-pointer relative overflow-hidden border border-border"
+      className="bg-white rounded-2xl shadow-card hover:shadow-card-hover relative overflow-hidden border border-border"
       data-testid="recommendation-card"
     >
       {/* Coloured top accent bar */}
@@ -76,28 +79,36 @@ export default function RecommendationCard({ rec }) {
           </span>
         </p>
 
-        <hr className="my-3 border-border" />
-
-        {/* Why this restaurant */}
-        <div className="space-y-2">
-          <div className="flex items-start gap-2">
-            <span className="text-sm flex-shrink-0">💡</span>
-            <div>
-              <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-0.5">Why this?</p>
-              <p className="text-dark text-sm leading-relaxed">{rec.why}</p>
-            </div>
-          </div>
-
-          {rec.highlight && (
-            <div className="flex items-start gap-2 bg-orange-50 rounded-lg p-2.5">
-              <span className="text-sm flex-shrink-0">⭐</span>
+        {/* Expandable details */}
+        {expanded && (
+          <div className="mt-4 space-y-2">
+            <hr className="border-border" />
+            <div className="flex items-start gap-2 pt-1">
+              <span className="text-sm flex-shrink-0">💡</span>
               <div>
-                <p className="text-xs font-semibold text-orange uppercase tracking-wide mb-0.5">Must Try</p>
-                <p className="text-dark text-sm">{rec.highlight}</p>
+                <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-0.5">Why this?</p>
+                <p className="text-dark text-sm leading-relaxed">{rec.why}</p>
               </div>
             </div>
-          )}
-        </div>
+            {rec.highlight && (
+              <div className="flex items-start gap-2 bg-orange-50 rounded-lg p-2.5">
+                <span className="text-sm flex-shrink-0">⭐</span>
+                <div>
+                  <p className="text-xs font-semibold text-orange uppercase tracking-wide mb-0.5">Must Try</p>
+                  <p className="text-dark text-sm">{rec.highlight}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* See details / Hide details button */}
+        <button
+          onClick={() => setExpanded(prev => !prev)}
+          className="mt-4 w-full text-center text-xs font-semibold text-primary border border-red-200 rounded-lg py-1.5 hover:bg-red-50 transition-colors"
+        >
+          {expanded ? 'Hide details ▲' : 'See details ▼'}
+        </button>
       </div>
     </article>
   )
