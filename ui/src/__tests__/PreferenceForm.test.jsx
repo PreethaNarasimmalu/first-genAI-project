@@ -77,6 +77,11 @@ describe('PreferenceForm', () => {
   it('calls onSubmit when form is submitted', async () => {
     const onSubmit = vi.fn()
     render(<PreferenceForm onSubmit={onSubmit} isLoading={false} />)
+    // Wait for dropdowns to populate (mocked fetch resolves asynchronously)
+    await waitFor(() => screen.getByRole('option', { name: 'Italian' }))
+    // Fill required fields before submitting
+    fireEvent.change(screen.getByLabelText(/location/i), { target: { value: 'Indiranagar' } })
+    fireEvent.change(screen.getByLabelText(/cuisine/i), { target: { value: 'Italian' } })
     fireEvent.click(screen.getByRole('button', { name: /find restaurants/i }))
     expect(onSubmit).toHaveBeenCalledTimes(1)
   })
@@ -84,6 +89,9 @@ describe('PreferenceForm', () => {
   it('passes free_text value in the submitted payload', async () => {
     const onSubmit = vi.fn()
     render(<PreferenceForm onSubmit={onSubmit} isLoading={false} />)
+    await waitFor(() => screen.getByRole('option', { name: 'Italian' }))
+    fireEvent.change(screen.getByLabelText(/location/i), { target: { value: 'Indiranagar' } })
+    fireEvent.change(screen.getByLabelText(/cuisine/i), { target: { value: 'Italian' } })
     const textarea = screen.getByLabelText(/anything specific/i)
     await userEvent.type(textarea, 'romantic dinner')
     fireEvent.click(screen.getByRole('button', { name: /find restaurants/i }))
