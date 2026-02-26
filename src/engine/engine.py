@@ -87,4 +87,14 @@ def recommend(
         if cuisine_matched:
             raw_results = cuisine_matched
 
+    # Apply min_rating post-filter. Keeping this in ChromaDB changes the
+    # semantic candidate pool — a restaurant in the top 200 for "4+" can
+    # fall outside the top 200 for "3.5+" because more documents compete.
+    # Post-filtering guarantees consistent results regardless of threshold.
+    if prefs.min_rating is not None:
+        raw_results = [
+            r for r in raw_results
+            if r["metadata"].get("rate", 0.0) >= prefs.min_rating
+        ]
+
     return rank(raw_results, max_price=prefs.max_price, top_n=final_top_n)

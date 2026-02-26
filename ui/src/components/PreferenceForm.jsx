@@ -126,12 +126,6 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
       aria-label="Restaurant preference form"
       className="bg-white rounded-2xl shadow-card border border-border overflow-hidden"
     >
-      {/* Form header */}
-      <div className="bg-primary px-5 py-4">
-        <h2 className="text-white font-bold text-base">Find Restaurants</h2>
-        <p className="text-red-200 text-xs mt-0.5">Tell us what you're craving</p>
-      </div>
-
       <div className="p-5 space-y-4">
 
         {/* Location — required */}

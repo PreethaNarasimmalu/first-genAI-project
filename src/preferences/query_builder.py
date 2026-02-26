@@ -67,8 +67,10 @@ def build_query(prefs: UserPreference) -> tuple[str, dict[str, Any]]:
         # approx_cost == 0 means "unknown" (stored as 0 fallback); exclude those
         conditions.append({"approx_cost": {"$lte": prefs.max_price}})
         conditions.append({"approx_cost": {"$gt": 0}})
-    if prefs.min_rating is not None:
-        conditions.append({"rate": {"$gte": prefs.min_rating}})
+    # min_rating is intentionally excluded from hard filters — applying it in
+    # ChromaDB changes the semantic candidate pool, causing a restaurant that
+    # scores in the top 200 for "4+" to fall out of the top 200 for "3.5+"
+    # (counter-intuitive). Rating is post-filtered in engine.py instead.
     if prefs.online_order is not None:
         conditions.append({"online_order": {"$eq": prefs.online_order}})
     if prefs.book_table is not None:
