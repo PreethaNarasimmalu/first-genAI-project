@@ -109,19 +109,10 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
       {/* Form header */}
       <div className="bg-primary px-5 py-4">
         <h2 className="text-white font-bold text-base">Find Restaurants</h2>
-        <p className="text-red-200 text-xs mt-0.5">Tell us what you're craving</p>
+        <p className="text-red-200 text-xs mt-0.5">Tell us what you're craving — all fields are optional</p>
       </div>
 
       <div className="p-5 space-y-4">
-
-        {/* Cuisine */}
-        <div>
-          <Label htmlFor="cuisine">Cuisine</Label>
-          <Select id="cuisine" value={form.cuisine} onChange={set('cuisine')} disabled={metaLoading}>
-            <option value="">Any cuisine</option>
-            {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
-          </Select>
-        </div>
 
         {/* Location */}
         <div>
@@ -129,6 +120,15 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
           <Select id="location" value={form.location} onChange={set('location')} disabled={metaLoading}>
             <option value="">Any location</option>
             {locations.map(l => <option key={l} value={l}>{l}</option>)}
+          </Select>
+        </div>
+
+        {/* Cuisine */}
+        <div>
+          <Label htmlFor="cuisine">Cuisine</Label>
+          <Select id="cuisine" value={form.cuisine} onChange={set('cuisine')} disabled={metaLoading}>
+            <option value="">Any cuisine</option>
+            {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
           </Select>
         </div>
 
