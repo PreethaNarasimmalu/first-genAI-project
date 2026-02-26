@@ -65,27 +65,23 @@ def recommend(
     # filter on "Koramangala", so we filter here instead.
     if prefs.location:
         location_lower = prefs.location.lower()
-        location_matched = [
+        raw_results = [
             r for r in raw_results
             if location_lower in r["metadata"].get("location", "").lower()
         ]
-        if location_matched:
-            raw_results = location_matched
 
     # Apply cuisine post-filter on raw results (cuisine is a free-text
     # comma-separated field so substring matching is more reliable than
     # an exact ChromaDB equality filter).
     if prefs.cuisine:
         cuisine_lower = [c.lower() for c in prefs.cuisine]
-        cuisine_matched = [
+        raw_results = [
             r for r in raw_results
             if any(
                 cu in r["metadata"].get("cuisine_str", "").lower()
                 for cu in cuisine_lower
             )
         ]
-        if cuisine_matched:
-            raw_results = cuisine_matched
 
     # Apply min_rating post-filter. Keeping this in ChromaDB changes the
     # semantic candidate pool — a restaurant in the top 200 for "4+" can
