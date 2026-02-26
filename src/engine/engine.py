@@ -87,6 +87,15 @@ def recommend(
         if cuisine_matched:
             raw_results = cuisine_matched
 
+    # Always strip restaurants whose rate was stored as 0.0 — this means the
+    # original dataset had no rating (NaN → 0.0 fallback in the indexer).
+    # These have no meaningful rating signal and distort comparisons between
+    # filtered and unfiltered result sets.
+    raw_results = [
+        r for r in raw_results
+        if r["metadata"].get("rate", 0.0) > 0.0
+    ]
+
     # Apply min_rating post-filter. Keeping this in ChromaDB changes the
     # semantic candidate pool — a restaurant in the top 200 for "4+" can
     # fall outside the top 200 for "3.5+" because more documents compete.
