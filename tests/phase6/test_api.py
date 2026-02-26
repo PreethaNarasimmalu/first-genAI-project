@@ -391,6 +391,99 @@ class TestRecommendErrors:
 
 
 # ---------------------------------------------------------------------------
+# LLM hallucination guard
+# ---------------------------------------------------------------------------
+
+
+class TestHallucinationGuard:
+    """The route must strip any LLM recommendation whose name does not appear
+    in the candidate list returned by the engine."""
+
+    def _llm_with_hallucination(self, extra_name: str) -> str:
+        """Build a LLM JSON response that includes one real candidate plus
+        one hallucinated restaurant."""
+        return json.dumps({
+            "recommendations": [
+                {
+                    "rank": 1,
+                    "name": "Spice Garden",       # matches _MOCK_CANDIDATE
+                    "location": "Koramangala",
+                    "cuisine": "North Indian",
+                    "rating": 4.2,
+                    "approx_cost": 650,
+                    "why": "Good match.",
+                    "highlight": "Butter chicken.",
+                },
+                {
+                    "rank": 2,
+                    "name": extra_name,            # hallucinated — NOT in candidates
+                    "location": "Indiranagar",
+                    "cuisine": "Continental",
+                    "rating": 3.8,
+                    "approx_cost": 800,
+                    "why": "Also good.",
+                    "highlight": "Try the steak.",
+                },
+            ],
+            "summary": "Two great options.",
+        })
+
+    def test_hallucinated_restaurant_stripped_from_response(self, client: TestClient):
+        llm_json = self._llm_with_hallucination("Buff Buffet Buff")
+        with (
+            patch("src.api.routes.recommend.run_engine", return_value=[_MOCK_CANDIDATE]),
+            patch("src.api.routes.recommend.call_llm", return_value=llm_json),
+        ):
+            data = client.post("/recommend", json={"location": "Banaswadi", "cuisine": ["Arabian"]}).json()
+        names = [r["name"] for r in data["recommendations"]]
+        assert "Buff Buffet Buff" not in names
+
+    def test_real_candidate_kept_after_hallucination_strip(self, client: TestClient):
+        llm_json = self._llm_with_hallucination("Invented Place")
+        with (
+            patch("src.api.routes.recommend.run_engine", return_value=[_MOCK_CANDIDATE]),
+            patch("src.api.routes.recommend.call_llm", return_value=llm_json),
+        ):
+            data = client.post("/recommend", json={}).json()
+        names = [r["name"] for r in data["recommendations"]]
+        assert "Spice Garden" in names
+
+    def test_all_hallucinations_stripped_returns_real_candidates_only(self, client: TestClient):
+        """If LLM returns only hallucinated names, result is empty (not the hallucinated ones)."""
+        all_fake = json.dumps({
+            "recommendations": [
+                {"rank": 1, "name": "Ghost Restaurant", "location": "Somewhere",
+                 "cuisine": "Unknown", "rating": 4.0, "approx_cost": 500,
+                 "why": "Made up.", "highlight": "Nothing real."},
+            ],
+            "summary": "Hallucinated summary.",
+        })
+        with (
+            patch("src.api.routes.recommend.run_engine", return_value=[_MOCK_CANDIDATE]),
+            patch("src.api.routes.recommend.call_llm", return_value=all_fake),
+        ):
+            data = client.post("/recommend", json={}).json()
+        assert data["recommendations"] == []
+
+    def test_hallucination_check_is_case_insensitive(self, client: TestClient):
+        """'SPICE GARDEN' should still match candidate 'Spice Garden'."""
+        upper_json = json.dumps({
+            "recommendations": [
+                {"rank": 1, "name": "SPICE GARDEN", "location": "Koramangala",
+                 "cuisine": "North Indian", "rating": 4.2, "approx_cost": 650,
+                 "why": "Good.", "highlight": "Biryani."},
+            ],
+            "summary": "Good pick.",
+        })
+        with (
+            patch("src.api.routes.recommend.run_engine", return_value=[_MOCK_CANDIDATE]),
+            patch("src.api.routes.recommend.call_llm", return_value=upper_json),
+        ):
+            data = client.post("/recommend", json={}).json()
+        assert len(data["recommendations"]) == 1
+
+
+# ---------------------------------------------------------------------------
 # CORS headers
 # ---------------------------------------------------------------------------
 

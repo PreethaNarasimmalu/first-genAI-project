@@ -104,6 +104,25 @@ def recommend(request: Request, body: UserPreference) -> RecommendationResponse:
         if r.name.strip().lower() not in _PLACEHOLDER_NAMES
     ]
 
+    # Strip hallucinated restaurants — the LLM sometimes ignores the candidate
+    # list and invents names from its training data.  Only keep recommendations
+    # whose name exactly matches (case-insensitive) one of the engine candidates.
+    candidate_names = {c.name.strip().lower() for c in candidates}
+    hallucinated = [
+        r.name for r in result.recommendations
+        if r.name.strip().lower() not in candidate_names
+    ]
+    if hallucinated:
+        logger.warning(
+            "LLM returned %d hallucinated restaurant(s) not in candidate list: %s — stripping.",
+            len(hallucinated),
+            hallucinated,
+        )
+    result.recommendations = [
+        r for r in result.recommendations
+        if r.name.strip().lower() in candidate_names
+    ]
+
     if not result.recommendations:
         return RecommendationResponse(
             recommendations=[],
