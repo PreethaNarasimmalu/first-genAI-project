@@ -85,25 +85,20 @@ def embed_documents(
     model_name: str = MODEL_NAME,
     batch_size: int = BATCH_SIZE,
 ) -> list[list[float]]:
-    """Embed a list of document strings using sentence-transformers.
+    """Embed a list of document strings.
 
-    Downloads the model on first run (cached locally afterwards).
+    Uses ChromaDB's built-in ONNX embedding function (all-MiniLM-L6-v2,
+    cached locally) so no network download is required at runtime.
 
     Args:
         documents: List of text documents to embed.
-        model_name: HuggingFace model identifier.
-        batch_size: Number of documents to embed per batch.
+        model_name: Ignored — kept for API compatibility.
+        batch_size: Ignored — ChromaDB batches internally.
 
     Returns:
         List of embedding vectors (each a list of floats).
     """
-    from sentence_transformers import SentenceTransformer
+    from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
-    model = SentenceTransformer(model_name)
-    embeddings = model.encode(
-        documents,
-        batch_size=batch_size,
-        show_progress_bar=len(documents) > batch_size,
-        convert_to_numpy=True,
-    )
-    return embeddings.tolist()
+    ef = DefaultEmbeddingFunction()
+    return list(ef(documents))

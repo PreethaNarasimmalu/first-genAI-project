@@ -158,16 +158,15 @@ class TestBuildDocuments:
 # ---------------------------------------------------------------------------
 
 class TestEmbedDocuments:
-    # SentenceTransformer is imported lazily inside the function body, so we
-    # must patch the attribute on the sentence_transformers module itself.
-    _PATCH_TARGET = "sentence_transformers.SentenceTransformer"
+    # embed_documents now uses ChromaDB's DefaultEmbeddingFunction (ONNX,
+    # cached locally) so we patch that instead of sentence_transformers.
+    _PATCH_TARGET = "chromadb.utils.embedding_functions.DefaultEmbeddingFunction"
 
     def test_returns_list_of_float_lists(self):
-        fake_embeddings = np.random.rand(3, 384).astype(np.float32)
-        mock_model = MagicMock()
-        mock_model.encode.return_value = fake_embeddings
+        fake_embeddings = np.random.rand(3, 384).astype(np.float32).tolist()
+        mock_ef = MagicMock(return_value=fake_embeddings)
 
-        with patch(self._PATCH_TARGET, return_value=mock_model):
+        with patch(self._PATCH_TARGET, return_value=mock_ef):
             result = embed_documents(["doc1", "doc2", "doc3"])
 
         assert isinstance(result, list)
@@ -175,31 +174,30 @@ class TestEmbedDocuments:
         assert all(isinstance(vec, list) for vec in result)
         assert all(isinstance(v, float) for v in result[0])
 
-    def test_uses_correct_model_name(self):
-        fake_embeddings = np.random.rand(1, 384).astype(np.float32)
-        mock_model = MagicMock()
-        mock_model.encode.return_value = fake_embeddings
-
-        with patch(self._PATCH_TARGET, return_value=mock_model) as mock_cls:
-            embed_documents(["hello"])
-            mock_cls.assert_called_once_with(MODEL_NAME)
-
-    def test_custom_model_name_passed_through(self):
-        fake_embeddings = np.random.rand(1, 384).astype(np.float32)
-        mock_model = MagicMock()
-        mock_model.encode.return_value = fake_embeddings
-
-        with patch(self._PATCH_TARGET, return_value=mock_model) as mock_cls:
-            embed_documents(["hello"], model_name="custom/model")
-            mock_cls.assert_called_once_with("custom/model")
-
-    def test_encode_called_with_documents(self):
+    def test_embedding_function_called_with_documents(self):
         docs = ["doc a", "doc b"]
-        fake_embeddings = np.random.rand(2, 384).astype(np.float32)
-        mock_model = MagicMock()
-        mock_model.encode.return_value = fake_embeddings
+        fake_embeddings = np.random.rand(2, 384).astype(np.float32).tolist()
+        mock_ef = MagicMock(return_value=fake_embeddings)
 
-        with patch(self._PATCH_TARGET, return_value=mock_model):
+        with patch(self._PATCH_TARGET, return_value=mock_ef):
             embed_documents(docs)
-            call_args = mock_model.encode.call_args
-            assert call_args[0][0] == docs
+            mock_ef.assert_called_once_with(docs)
+
+    def test_model_name_param_accepted(self):
+        """model_name is kept for API compatibility but ignored internally."""
+        fake_embeddings = np.random.rand(1, 384).astype(np.float32).tolist()
+        mock_ef = MagicMock(return_value=fake_embeddings)
+
+        with patch(self._PATCH_TARGET, return_value=mock_ef):
+            # Should not raise even though model_name is passed
+            result = embed_documents(["hello"], model_name="any/model")
+        assert isinstance(result, list)
+
+    def test_returns_correct_count(self):
+        docs = ["a", "b", "c", "d"]
+        fake_embeddings = np.random.rand(4, 384).astype(np.float32).tolist()
+        mock_ef = MagicMock(return_value=fake_embeddings)
+
+        with patch(self._PATCH_TARGET, return_value=mock_ef):
+            result = embed_documents(docs)
+        assert len(result) == 4
