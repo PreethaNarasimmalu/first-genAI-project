@@ -3,30 +3,38 @@
  *
  * Fetches /cuisines and /locations from the API on mount to populate the
  * dropdowns. On submit calls onSubmit(preferences) with the cleaned payload.
+ * Location and Cuisine are required; all other fields are optional.
  */
 import { useState, useEffect } from 'react'
 import { getCuisines, getLocations } from '../api/recommend'
 
 const MEAL_TYPES = ['Dine-out', 'Delivery', 'Buffet', 'Cafes', 'Desserts', 'Pubs and bars']
 
-function Label({ children, htmlFor }) {
+function Label({ children, htmlFor, required }) {
   return (
     <label htmlFor={htmlFor} className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
       {children}
+      {required && <span className="text-primary ml-0.5">*</span>}
     </label>
   )
 }
 
-function Select({ id, value, onChange, children, disabled }) {
+function FieldError({ message }) {
+  if (!message) return null
+  return <p className="text-primary text-xs mt-1">{message}</p>
+}
+
+function Select({ id, value, onChange, children, disabled, error }) {
   return (
     <select
       id={id}
       value={value}
       onChange={onChange}
       disabled={disabled}
-      className="w-full border border-border rounded-lg px-3 py-2 text-sm text-dark bg-white
+      className={`w-full border rounded-lg px-3 py-2 text-sm text-dark bg-white
                  focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                 disabled:opacity-50 disabled:cursor-not-allowed"
+                 disabled:opacity-50 disabled:cursor-not-allowed
+                 ${error ? 'border-primary' : 'border-border'}`}
     >
       {children}
     </select>
@@ -56,6 +64,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
   const [cuisines, setCuisines]   = useState([])
   const [locations, setLocations] = useState([])
   const [metaLoading, setMetaLoading] = useState(true)
+  const [errors, setErrors] = useState({})
 
   const [form, setForm] = useState({
     cuisine:      '',
@@ -77,14 +86,24 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
   }, [])
 
   function set(key) {
-    return e => setForm(f => ({ ...f, [key]: e.target.value }))
+    return e => {
+      setForm(f => ({ ...f, [key]: e.target.value }))
+      if (errors[key]) setErrors(err => ({ ...err, [key]: '' }))
+    }
   }
 
   function handleSubmit(e) {
     e.preventDefault()
+    const newErrors = {}
+    if (!form.location) newErrors.location = 'Please select a location'
+    if (!form.cuisine)  newErrors.cuisine  = 'Please select a cuisine'
+    if (Object.keys(newErrors).length) {
+      setErrors(newErrors)
+      return
+    }
     const payload = {
-      cuisine:      form.cuisine    ? [form.cuisine] : undefined,
-      location:     form.location   || undefined,
+      cuisine:      [form.cuisine],
+      location:     form.location,
       max_price:    form.max_price  ? Number(form.max_price)  : undefined,
       min_rating:   form.min_rating ? Number(form.min_rating) : undefined,
       online_order: form.online_order || undefined,
@@ -98,6 +117,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
   function handleReset() {
     setForm({ cuisine: '', location: '', max_price: '', min_rating: '',
               online_order: false, book_table: false, meal_type: '', free_text: '' })
+    setErrors({})
   }
 
   return (
@@ -109,30 +129,32 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
       {/* Form header */}
       <div className="bg-primary px-5 py-4">
         <h2 className="text-white font-bold text-base">Find Restaurants</h2>
-        <p className="text-red-200 text-xs mt-0.5">Tell us what you're craving — all fields are optional</p>
+        <p className="text-red-200 text-xs mt-0.5">Tell us what you're craving</p>
       </div>
 
       <div className="p-5 space-y-4">
 
-        {/* Location */}
+        {/* Location — required */}
         <div>
-          <Label htmlFor="location">Location</Label>
-          <Select id="location" value={form.location} onChange={set('location')} disabled={metaLoading}>
-            <option value="">Any location</option>
+          <Label htmlFor="location" required>Location</Label>
+          <Select id="location" value={form.location} onChange={set('location')} disabled={metaLoading} error={errors.location}>
+            <option value="">Select a location</option>
             {locations.map(l => <option key={l} value={l}>{l}</option>)}
           </Select>
+          <FieldError message={errors.location} />
         </div>
 
-        {/* Cuisine */}
+        {/* Cuisine — required */}
         <div>
-          <Label htmlFor="cuisine">Cuisine</Label>
-          <Select id="cuisine" value={form.cuisine} onChange={set('cuisine')} disabled={metaLoading}>
-            <option value="">Any cuisine</option>
+          <Label htmlFor="cuisine" required>Cuisine</Label>
+          <Select id="cuisine" value={form.cuisine} onChange={set('cuisine')} disabled={metaLoading} error={errors.cuisine}>
+            <option value="">Select a cuisine</option>
             {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
           </Select>
+          <FieldError message={errors.cuisine} />
         </div>
 
-        {/* Budget */}
+        {/* Budget — optional */}
         <div>
           <Label htmlFor="max_price">Max budget (₹ for two)</Label>
           <div className="relative">
@@ -141,7 +163,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
               id="max_price"
               type="number"
               min="1"
-              placeholder="e.g. 800"
+              placeholder="e.g. 800 (optional)"
               value={form.max_price}
               onChange={set('max_price')}
               className="w-full border border-border rounded-lg pl-7 pr-3 py-2 text-sm text-dark
@@ -150,9 +172,9 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
           </div>
         </div>
 
-        {/* Min Rating */}
+        {/* Min Rating — optional */}
         <div>
-          <Label htmlFor="min_rating">Minimum rating</Label>
+          <Label htmlFor="min_rating">Minimum rating <span className="normal-case font-normal text-muted">(optional)</span></Label>
           <div className="flex gap-2">
             {[3.0, 3.5, 4.0, 4.5].map(r => (
               <button
@@ -170,16 +192,16 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
           </div>
         </div>
 
-        {/* Meal Type */}
+        {/* Meal Type — optional */}
         <div>
-          <Label htmlFor="meal_type">Meal type</Label>
+          <Label htmlFor="meal_type">Meal type <span className="normal-case font-normal text-muted">(optional)</span></Label>
           <Select id="meal_type" value={form.meal_type} onChange={set('meal_type')}>
             <option value="">Any type</option>
             {MEAL_TYPES.map(m => <option key={m} value={m}>{m}</option>)}
           </Select>
         </div>
 
-        {/* Toggles */}
+        {/* Toggles — optional */}
         <div className="space-y-3 pt-1">
           <Toggle
             id="online_order"
@@ -195,9 +217,9 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
           />
         </div>
 
-        {/* Free text */}
+        {/* Free text — optional */}
         <div>
-          <Label htmlFor="free_text">Anything specific?</Label>
+          <Label htmlFor="free_text">Anything specific? <span className="normal-case font-normal text-muted">(optional)</span></Label>
           <textarea
             id="free_text"
             placeholder='e.g. "Romantic rooftop with cocktails"'
