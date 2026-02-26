@@ -53,6 +53,11 @@ def recommend(
     """
     semantic_query, filters = build_query(prefs)
 
+    # Cap retrieval_top_k to the actual collection size so ChromaDB never
+    # errors on small collections (e.g. the 57-row sample dataset).
+    if collection is not None:
+        retrieval_top_k = min(retrieval_top_k, max(collection.count(), 1))
+
     raw_results = retrieve(
         semantic_query,
         filters,
