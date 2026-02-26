@@ -21,7 +21,7 @@ from src.indexing.vector_store import get_client, get_collection, similarity_sea
 
 # Retrieve more than we need so the ranker has enough unique candidates
 # after deduplication (dataset has many near-duplicate rows).
-DEFAULT_RETRIEVAL_TOP_K = 50
+DEFAULT_RETRIEVAL_TOP_K = 200
 
 
 def retrieve(

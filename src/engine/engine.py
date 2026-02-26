@@ -60,6 +60,18 @@ def recommend(
         top_k=retrieval_top_k,
     )
 
+    # Apply location post-filter (substring match). The dataset has sub-location
+    # values like "Koramangala 5th Block" that fail an exact ChromaDB equality
+    # filter on "Koramangala", so we filter here instead.
+    if prefs.location:
+        location_lower = prefs.location.lower()
+        location_matched = [
+            r for r in raw_results
+            if location_lower in r["metadata"].get("location", "").lower()
+        ]
+        if location_matched:
+            raw_results = location_matched
+
     # Apply cuisine post-filter on raw results (cuisine is a free-text
     # comma-separated field so substring matching is more reliable than
     # an exact ChromaDB equality filter).

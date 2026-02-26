@@ -59,8 +59,10 @@ def build_query(prefs: UserPreference) -> tuple[str, dict[str, Any]]:
     # --- ChromaDB metadata filter --------------------------------------------
     conditions: list[dict[str, Any]] = []
 
-    if prefs.location:
-        conditions.append({"location": {"$eq": prefs.location}})
+    # Location is intentionally excluded from hard filters because the dataset
+    # has sub-location values like "Koramangala 5th Block" that won't match an
+    # exact equality on "Koramangala". Substring post-filtering is applied in
+    # engine.py instead, matching the same pattern used for cuisine.
     if prefs.max_price is not None:
         # approx_cost == 0 means "unknown" (stored as 0 fallback); exclude those
         conditions.append({"approx_cost": {"$lte": prefs.max_price}})
