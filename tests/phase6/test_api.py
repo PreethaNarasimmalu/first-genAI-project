@@ -302,22 +302,31 @@ class TestRecommendValidation:
 
 
 class TestRecommendErrors:
-    def test_no_candidates_returns_404(self, client: TestClient):
-        """When the engine finds nothing, the API should return 404."""
+    def test_no_candidates_returns_200_with_empty_list(self, client: TestClient):
+        """When the engine finds nothing, the API returns 200 with empty recommendations
+        so the UI shows a friendly 'No restaurants found' state instead of an error."""
         with (
             patch("src.api.routes.recommend.run_engine", return_value=[]),
             patch("src.api.routes.recommend.call_llm", return_value=_MOCK_LLM_JSON),
         ):
             resp = client.post("/recommend", json={"location": "Koramangala"})
-        assert resp.status_code == 404
+        assert resp.status_code == 200
 
-    def test_404_response_has_detail(self, client: TestClient):
+    def test_no_candidates_returns_empty_recommendations_list(self, client: TestClient):
         with (
             patch("src.api.routes.recommend.run_engine", return_value=[]),
             patch("src.api.routes.recommend.call_llm", return_value=_MOCK_LLM_JSON),
         ):
             data = client.post("/recommend", json={}).json()
-        assert "detail" in data
+        assert data["recommendations"] == []
+
+    def test_no_candidates_response_has_summary(self, client: TestClient):
+        with (
+            patch("src.api.routes.recommend.run_engine", return_value=[]),
+            patch("src.api.routes.recommend.call_llm", return_value=_MOCK_LLM_JSON),
+        ):
+            data = client.post("/recommend", json={}).json()
+        assert isinstance(data["summary"], str) and len(data["summary"]) > 0
 
     def test_llm_environment_error_returns_503(self, client: TestClient):
         """Missing GROQ_API_KEY should surface as 503 Service Unavailable."""
