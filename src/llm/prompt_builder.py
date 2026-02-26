@@ -24,6 +24,10 @@ _SYSTEM_PROMPT = (
     "substitute any restaurant not explicitly listed in the candidates. "
     "Every restaurant in your response must appear verbatim in the candidate list. "
     "Use only the fields provided (name, location, cuisine, rating, cost, dishes). "
+    "If the user requested a specific cuisine and NONE of the candidates match that cuisine, "
+    "return an empty recommendations list: "
+    "{\"recommendations\": [], \"summary\": \"No matching restaurants found for your preferences.\"}. "
+    "Never use placeholder values like 'None', 'null', or '0' for name, location, or cuisine. "
     "Always respond with a single valid JSON object — no prose before or "
     "after it, no markdown code fences, just the raw JSON."
 )

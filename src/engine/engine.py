@@ -60,4 +60,19 @@ def recommend(
         top_k=retrieval_top_k,
     )
 
+    # Apply cuisine post-filter on raw results (cuisine is a free-text
+    # comma-separated field so substring matching is more reliable than
+    # an exact ChromaDB equality filter).
+    if prefs.cuisine:
+        cuisine_lower = [c.lower() for c in prefs.cuisine]
+        cuisine_matched = [
+            r for r in raw_results
+            if any(
+                cu in r["metadata"].get("cuisine_str", "").lower()
+                for cu in cuisine_lower
+            )
+        ]
+        if cuisine_matched:
+            raw_results = cuisine_matched
+
     return rank(raw_results, max_price=prefs.max_price, top_n=final_top_n)

@@ -99,5 +99,22 @@ def recommend(request: Request, body: UserPreference) -> RecommendationResponse:
             detail="LLM returned an unexpected response format. Please retry.",
         ) from exc
 
+    # Strip placeholder items the LLM occasionally returns when no candidate
+    # truly matches (e.g. name="None", rating=0.0, approx_cost=0).
+    _PLACEHOLDER_NAMES = {"none", "null", "n/a", ""}
+    result.recommendations = [
+        r for r in result.recommendations
+        if r.name.strip().lower() not in _PLACEHOLDER_NAMES
+    ]
+
+    if not result.recommendations:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "No restaurants found matching your preferences. "
+                "Try relaxing your filters (e.g. different cuisine, broader location)."
+            ),
+        )
+
     logger.info("Returning %d recommendations.", len(result.recommendations))
     return result
