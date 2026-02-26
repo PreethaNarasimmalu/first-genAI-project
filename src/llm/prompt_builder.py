@@ -114,7 +114,8 @@ def build_prompts(
         f"Candidate restaurants (from the real Zomato dataset — use ONLY these):\n"
         f"{_format_candidates(candidates)}\n\n"
         f"IMPORTANT: Recommend ONLY from the candidates listed above. "
-        f"Do not add, invent, or substitute any other restaurant.\n\n"
+        f"Do not add, invent, or substitute any other restaurant. "
+        f"Include ALL {len(candidates)} candidates in your recommendations list — do not drop any.\n\n"
         f"Respond with a JSON object matching exactly this schema:\n{_JSON_SCHEMA}"
     )
     return _SYSTEM_PROMPT, user_prompt
