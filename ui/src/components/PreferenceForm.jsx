@@ -105,7 +105,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
       cuisine:      [form.cuisine],
       location:     form.location,
       max_price:    form.max_price  ? Number(form.max_price)  : undefined,
-      min_rating:   form.min_rating ? Number(form.min_rating) : undefined,
+      min_rating:   form.min_rating ? parseFloat(form.min_rating) : undefined,
       online_order: form.online_order || undefined,
       book_table:   form.book_table  || undefined,
       meal_type:    form.meal_type   || undefined,
@@ -180,9 +180,9 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
               <button
                 key={r}
                 type="button"
-                onClick={() => setForm(f => ({ ...f, min_rating: f.min_rating === String(r) ? '' : String(r) }))}
+                onClick={() => setForm(f => ({ ...f, min_rating: f.min_rating === r.toFixed(1) ? '' : r.toFixed(1) }))}
                 className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all
-                  ${form.min_rating === String(r)
+                  ${form.min_rating === r.toFixed(1)
                     ? 'bg-primary text-white border-primary'
                     : 'bg-white text-muted border-border hover:border-primary hover:text-primary'}`}
               >
