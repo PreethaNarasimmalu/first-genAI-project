@@ -15,17 +15,17 @@ export default function Navbar() {
                 FoodieAI
               </h1>
               <p className="text-red-200 text-xs font-medium leading-none mt-0.5">
-                Discover · Taste · Enjoy
+                Bengaluru's AI Food Guide
               </p>
             </div>
           </div>
 
           {/* Tagline */}
-          <div className="hidden md:block text-right">
+          <div className="text-right">
             <p className="text-red-100 text-sm font-medium">
               AI-powered restaurant recommendations
             </p>
-            <p className="text-red-200 text-xs">Bangalore · Powered by Groq</p>
+            <p className="text-red-200 text-xs">Bengaluru · Powered by Groq</p>
           </div>
         </div>
       </div>

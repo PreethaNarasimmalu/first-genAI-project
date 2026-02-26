@@ -36,10 +36,10 @@ export default function Home() {
       {/* Hero strip */}
       <div className="mb-6 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-dark">
-          What are you craving today?
+          Bengaluru Restaurant Recommendations
         </h2>
         <p className="text-muted text-sm mt-1">
-          AI-powered recommendations tailored to your taste — from 51,000+ Bangalore restaurants
+          AI-powered recommendations tailored to your taste — from 51,000+ Bengaluru restaurants
         </p>
       </div>
 
