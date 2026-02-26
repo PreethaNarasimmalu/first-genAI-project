@@ -93,4 +93,17 @@ def recommend(
             if r["metadata"].get("rate", 0.0) >= prefs.min_rating
         ]
 
+    # Apply meal_type post-filter. Using meal_type as a ChromaDB hard filter
+    # changes the retrieval pool which counterintuitively causes a restaurant
+    # absent from "no filter" results to appear when a stricter filter is added
+    # (it was below the top-K cutoff in the broad pool but rises to the top in
+    # the narrower meal-type pool). Post-filtering keeps behaviour monotone:
+    # adding a filter can only remove results, never add new ones.
+    if prefs.meal_type:
+        meal_lower = prefs.meal_type.lower()
+        raw_results = [
+            r for r in raw_results
+            if r["metadata"].get("meal_type", "").lower() == meal_lower
+        ]
+
     return rank(raw_results, max_price=prefs.max_price, top_n=final_top_n)

@@ -71,12 +71,18 @@ def build_query(prefs: UserPreference) -> tuple[str, dict[str, Any]]:
     # ChromaDB changes the semantic candidate pool, causing a restaurant that
     # scores in the top 200 for "4+" to fall out of the top 200 for "3.5+"
     # (counter-intuitive). Rating is post-filtered in engine.py instead.
+    #
+    # meal_type is intentionally excluded from hard filters for the same reason:
+    # using it as a ChromaDB filter changes the retrieval pool, which can
+    # counterintuitively surface restaurants that never appeared without the
+    # filter (because they were below the top-K cut-off in the broader search
+    # but rise to the top in the smaller, meal-type-specific pool). Instead,
+    # meal_type is included in the semantic query (above) and post-filtered in
+    # engine.py for consistent, monotone behaviour: more filters = fewer results.
     if prefs.online_order is not None:
         conditions.append({"online_order": {"$eq": prefs.online_order}})
     if prefs.book_table is not None:
         conditions.append({"book_table": {"$eq": prefs.book_table}})
-    if prefs.meal_type:
-        conditions.append({"meal_type": {"$eq": prefs.meal_type}})
 
     if len(conditions) == 0:
         filters: dict[str, Any] = {}

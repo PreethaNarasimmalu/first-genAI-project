@@ -366,3 +366,72 @@ class TestCombinedFilters:
         ]
         candidates = _run(_prefs(location="Koramangala", cuisine=["Italian"]), raw)
         assert len(candidates) <= 5  # DEFAULT_FINAL_TOP_N = 5
+
+
+# ---------------------------------------------------------------------------
+# Meal type filter
+# ---------------------------------------------------------------------------
+
+class TestMealTypeFilter:
+    """meal_type must be a POST-filter (not a ChromaDB hard filter).
+
+    The key requirement: adding a meal_type filter must only NARROW results.
+    It must never cause a restaurant to appear that was absent without the filter
+    (the 'extra restaurant' bug caused by changing the ChromaDB retrieval pool).
+    """
+
+    def _raw(self):
+        return [
+            _make_result("Buffet Place", "Koramangala", cuisine_str="Chinese",
+                         meal_type="Buffet", rate=4.5),
+            _make_result("Dine-out Place", "Koramangala", cuisine_str="Chinese",
+                         meal_type="Dine-out", rate=4.2),
+            _make_result("Delivery Place", "Koramangala", cuisine_str="Chinese",
+                         meal_type="Delivery", rate=3.8),
+        ]
+
+    def test_meal_type_filter_keeps_matching_meal_type(self):
+        candidates = _run(_prefs(meal_type="Buffet"), self._raw())
+        assert _names(candidates) == ["Buffet Place"]
+
+    def test_meal_type_filter_removes_non_matching(self):
+        candidates = _run(_prefs(meal_type="Buffet"), self._raw())
+        names = _names(candidates)
+        assert "Dine-out Place" not in names
+        assert "Delivery Place" not in names
+
+    def test_no_meal_type_filter_includes_all_types(self):
+        """Without meal_type filter, all meal types should pass through."""
+        candidates = _run(_prefs(), self._raw())
+        assert len(candidates) == 3
+
+    def test_meal_type_filter_is_case_insensitive(self):
+        candidates = _run(_prefs(meal_type="buffet"), self._raw())
+        assert "Buffet Place" in _names(candidates)
+
+    def test_no_meal_type_match_returns_empty(self):
+        candidates = _run(_prefs(meal_type="Desserts"), self._raw())
+        assert candidates == []
+
+    def test_adding_meal_type_can_only_narrow_not_expand(self):
+        """The 'extra restaurant' bug: adding meal_type=Buffet must not return
+        MORE restaurants than without the filter on the same pool."""
+        without_filter = _run(_prefs(location="Koramangala", cuisine=["Chinese"]),
+                              self._raw())
+        with_filter = _run(_prefs(location="Koramangala", cuisine=["Chinese"],
+                                  meal_type="Buffet"), self._raw())
+        # With filter must be a strict subset of without filter
+        assert len(with_filter) <= len(without_filter)
+        filter_names = set(_names(with_filter))
+        no_filter_names = set(_names(without_filter))
+        assert filter_names.issubset(no_filter_names)
+
+    def test_meal_type_combined_with_location_and_cuisine(self):
+        raw = [
+            _make_result("Match", "Koramangala", cuisine_str="Chinese", meal_type="Buffet"),
+            _make_result("Wrong Type", "Koramangala", cuisine_str="Chinese", meal_type="Dine-out"),
+            _make_result("Wrong Location", "Indiranagar", cuisine_str="Chinese", meal_type="Buffet"),
+        ]
+        candidates = _run(_prefs(location="Koramangala", cuisine=["Chinese"],
+                                 meal_type="Buffet"), raw)
+        assert _names(candidates) == ["Match"]

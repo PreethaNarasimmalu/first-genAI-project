@@ -105,14 +105,16 @@ class TestFilters:
         assert "rate" not in str(filters)
         assert "rating" not in str(filters)
 
-    # --- meal_type: must be in hard filters ---
-    def test_meal_type_in_hard_filters(self):
+    # --- meal_type: semantic only, NOT a hard filter (same reason as min_rating:
+    # using it as a ChromaDB filter changes the retrieval pool, which can cause
+    # a restaurant absent in the broad search to appear only with the filter) ---
+    def test_meal_type_not_in_hard_filters(self):
         _, filters = build_query(_prefs(meal_type="Buffet"))
-        assert filters == {"meal_type": {"$eq": "Buffet"}}
+        assert "meal_type" not in str(filters)
 
-    def test_meal_type_eq_preserves_value_case(self):
+    def test_meal_type_only_does_not_produce_filter(self):
         _, filters = build_query(_prefs(meal_type="Dine-out"))
-        assert filters["meal_type"]["$eq"] == "Dine-out"
+        assert filters == {}
 
     # --- max_price: two conditions (lte + gt 0) ---
     def test_max_price_produces_two_conditions(self):
@@ -149,16 +151,22 @@ class TestFilters:
 
     # --- multiple hard-filter fields → $and ---
     def test_multiple_conditions_wrapped_in_and(self):
-        _, filters = build_query(_prefs(meal_type="Buffet", online_order=True))
+        _, filters = build_query(_prefs(online_order=True, book_table=True))
         assert "$and" in filters
 
-    def test_and_contains_meal_type_and_online_order(self):
-        _, filters = build_query(_prefs(meal_type="Buffet", online_order=True))
+    def test_and_contains_online_order_and_book_table(self):
+        _, filters = build_query(_prefs(online_order=True, book_table=True))
         keys = [list(c.keys())[0] for c in filters["$and"]]
-        assert "meal_type" in keys
         assert "online_order" in keys
+        assert "book_table" in keys
 
     # --- single hard-filter field: no $and wrapper ---
     def test_single_condition_not_wrapped_in_and(self):
-        _, filters = build_query(_prefs(meal_type="Dine-out"))
+        _, filters = build_query(_prefs(online_order=True))
         assert "$and" not in filters
+
+    # --- meal_type alone produces no hard filter (semantic only) ---
+    def test_meal_type_with_online_order_does_not_add_meal_type_to_filters(self):
+        _, filters = build_query(_prefs(meal_type="Buffet", online_order=True))
+        # Only online_order should be in the hard filter
+        assert filters == {"online_order": {"$eq": True}}

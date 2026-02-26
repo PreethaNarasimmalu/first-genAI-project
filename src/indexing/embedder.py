@@ -27,6 +27,7 @@ def build_document(row: pd.Series) -> str:
     name = row.get("name") or "Unknown"
     rest_type = row.get("rest_type") or "restaurant"
     location = row.get("location") or "unknown location"
+    meal_type = row.get("meal_type") or ""
 
     cuisines = row.get("cuisines", [])
     if isinstance(cuisines, (list, tuple)):
@@ -55,12 +56,15 @@ def build_document(row: pd.Series) -> str:
     online_str = "Yes" if online_order else "No"
     table_str = "Yes" if book_table else "No"
 
+    meal_str = f" Listed under: {meal_type}." if meal_type else ""
+
     return (
         f"{name} is a {rest_type} in {location} serving {cuisine_str}. "
         f"Rating: {rate_str} based on {votes} votes. "
         f"Approx cost for two: {cost_str}. "
         f"Popular dishes: {dish_liked}. "
         f"Online order: {online_str}. Table booking: {table_str}."
+        f"{meal_str}"
     )
 
 
