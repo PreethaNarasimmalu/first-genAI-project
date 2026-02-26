@@ -47,7 +47,7 @@ describe('ResultsList', () => {
 
     it('shows the correct recommendation count in the banner', () => {
       render(<ResultsList data={MOCK_DATA} />)
-      expect(screen.getByText(/AI found 2 recommendations/i)).toBeInTheDocument()
+      expect(screen.getByText(/Found 2 recommendations tailored to your taste/i)).toBeInTheDocument()
     })
 
     it('renders restaurant names', () => {

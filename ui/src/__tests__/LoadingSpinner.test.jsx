@@ -26,6 +26,6 @@ describe('LoadingSpinner', () => {
 
   it('shows a secondary hint message', () => {
     render(<LoadingSpinner />)
-    expect(screen.getByText(/AI is curating/i)).toBeInTheDocument()
+    expect(screen.getByText(/Curating recommendations tailored to your taste/i)).toBeInTheDocument()
   })
 })

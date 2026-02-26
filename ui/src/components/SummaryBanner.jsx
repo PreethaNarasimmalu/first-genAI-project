@@ -8,7 +8,7 @@ export default function SummaryBanner({ summary, count }) {
       <span className="text-2xl flex-shrink-0" role="img" aria-label="sparkle">✨</span>
       <div>
         <p className="text-dark text-sm font-semibold mb-1">
-          AI found {count} recommendation{count !== 1 ? 's' : ''} for you
+          Found {count} recommendation{count !== 1 ? 's' : ''} tailored to your taste
         </p>
         <p className="text-muted text-sm leading-relaxed">{summary}</p>
       </div>

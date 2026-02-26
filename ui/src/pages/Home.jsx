@@ -39,7 +39,7 @@ export default function Home() {
           Bengaluru Restaurant Recommendations
         </h2>
         <p className="text-muted text-sm mt-1">
-          AI-powered recommendations tailored to your taste — from 51,000+ Bengaluru restaurants
+          Recommendations tailored to your taste — from 51,000+ Bengaluru restaurants
         </p>
       </div>
 

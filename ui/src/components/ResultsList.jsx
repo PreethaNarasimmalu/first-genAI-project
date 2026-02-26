@@ -12,7 +12,7 @@ function EmptyState() {
       <h2 className="text-dark text-xl font-bold">Ready to explore?</h2>
       <p className="text-muted text-sm max-w-xs leading-relaxed">
         Fill in your preferences on the left and hit <strong>Find Restaurants</strong> to get
-        AI-curated recommendations.
+        recommendations tailored to your taste.
       </p>
     </div>
   )

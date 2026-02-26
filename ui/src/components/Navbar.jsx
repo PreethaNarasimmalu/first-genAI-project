@@ -12,10 +12,10 @@ export default function Navbar() {
             <span className="text-2xl" role="img" aria-label="food">🍽️</span>
             <div>
               <h1 className="text-white text-xl font-bold tracking-tight leading-none">
-                FoodieAI
+                Foodie
               </h1>
               <p className="text-red-200 text-xs font-medium leading-none mt-0.5">
-                Bengaluru's AI Food Guide
+                Bengaluru's Food Guide
               </p>
             </div>
           </div>
@@ -23,7 +23,7 @@ export default function Navbar() {
           {/* Tagline */}
           <div className="text-right">
             <p className="text-red-100 text-sm font-medium">
-              AI-powered restaurant recommendations
+              Recommendations tailored to your taste
             </p>
             <p className="text-red-200 text-xs">Bengaluru · Powered by Groq</p>
           </div>

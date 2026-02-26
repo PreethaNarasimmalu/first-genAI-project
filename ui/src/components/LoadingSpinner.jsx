@@ -19,7 +19,7 @@ export default function LoadingSpinner() {
 
       <div className="text-center">
         <p className="text-dark font-semibold text-base">Finding your perfect restaurants…</p>
-        <p className="text-muted text-sm mt-1">Our AI is curating recommendations just for you</p>
+        <p className="text-muted text-sm mt-1">Curating recommendations tailored to your taste…</p>
       </div>
     </div>
   )
