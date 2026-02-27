@@ -168,7 +168,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
 
         {/* Min Rating — optional */}
         <div>
-          <Label htmlFor="min_rating">Minimum rating <span className="normal-case font-normal text-orange">(optional)</span></Label>
+          <Label htmlFor="min_rating">Minimum rating <span className="normal-case font-normal text-muted">(optional)</span></Label>
           <div className="flex gap-2">
             {[3.0, 3.5, 4.0, 4.5].map(r => (
               <button
@@ -188,7 +188,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
 
         {/* Meal Type — optional */}
         <div>
-          <Label htmlFor="meal_type">Meal type <span className="normal-case font-normal text-orange">(optional)</span></Label>
+          <Label htmlFor="meal_type">Meal type <span className="normal-case font-normal text-muted">(optional)</span></Label>
           <Select id="meal_type" value={form.meal_type} onChange={set('meal_type')}>
             <option value="">Any type</option>
             {MEAL_TYPES.map(m => <option key={m} value={m}>{m}</option>)}
@@ -213,7 +213,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
 
         {/* Free text — optional */}
         <div>
-          <Label htmlFor="free_text">Anything specific? <span className="normal-case font-normal text-orange">(optional)</span></Label>
+          <Label htmlFor="free_text">Anything specific? <span className="normal-case font-normal text-muted">(optional)</span></Label>
           <textarea
             id="free_text"
             placeholder='e.g. "Romantic rooftop with cocktails"'
