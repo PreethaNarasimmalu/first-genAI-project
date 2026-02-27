@@ -18,9 +18,14 @@ from pathlib import Path
 import streamlit as st
 
 # ── Inject Streamlit secrets into os.environ so engine code can read them ──
-for _key in ("GROQ_API_KEY",):
-    if hasattr(st, "secrets") and _key in st.secrets:
-        os.environ[_key] = st.secrets[_key]
+# Wrapped in try/except because st.secrets raises StreamlitSecretNotFoundError
+# when no secrets file exists (e.g. local dev without .streamlit/secrets.toml)
+try:
+    for _key in ("GROQ_API_KEY",):
+        if _key in st.secrets:
+            os.environ[_key] = st.secrets[_key]
+except Exception:
+    pass  # No secrets file — fall back to .env / environment variables
 
 # ── Ensure project root is importable ─────────────────────────────────────
 sys.path.insert(0, str(Path(__file__).resolve().parent))
