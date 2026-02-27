@@ -128,24 +128,24 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
     >
       <div className="p-5 space-y-4">
 
-        {/* Location — required */}
-        <div>
-          <Label htmlFor="location" required>Location</Label>
-          <Select id="location" value={form.location} onChange={set('location')} disabled={metaLoading} error={errors.location}>
-            <option value="">Select a location</option>
-            {locations.map(l => <option key={l} value={l}>{l}</option>)}
-          </Select>
-          <FieldError message={errors.location} />
-        </div>
-
-        {/* Cuisine — required */}
-        <div>
-          <Label htmlFor="cuisine" required>Cuisine</Label>
-          <Select id="cuisine" value={form.cuisine} onChange={set('cuisine')} disabled={metaLoading} error={errors.cuisine}>
-            <option value="">Select a cuisine</option>
-            {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
-          </Select>
-          <FieldError message={errors.cuisine} />
+        {/* Location + Cuisine — side by side */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="location" required>Location</Label>
+            <Select id="location" value={form.location} onChange={set('location')} disabled={metaLoading} error={errors.location}>
+              <option value="">Select a location</option>
+              {locations.map(l => <option key={l} value={l}>{l}</option>)}
+            </Select>
+            <FieldError message={errors.location} />
+          </div>
+          <div>
+            <Label htmlFor="cuisine" required>Cuisine</Label>
+            <Select id="cuisine" value={form.cuisine} onChange={set('cuisine')} disabled={metaLoading} error={errors.cuisine}>
+              <option value="">Select a cuisine</option>
+              {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
+            </Select>
+            <FieldError message={errors.cuisine} />
+          </div>
         </div>
 
         {/* Budget — optional */}
