@@ -19,9 +19,11 @@ import chromadb
 from src.indexing.embedder import embed_documents
 from src.indexing.vector_store import get_client, get_collection, similarity_search
 
-# Default top_k — overridden by engine.py to collection.count() so that
-# all ChromaDB-filtered documents are retrieved before post-filtering.
-DEFAULT_RETRIEVAL_TOP_K = 1000
+# similarity_search() uses collection.get() so it fetches ALL documents that
+# match the ChromaDB WHERE clause regardless of this value. top_k only caps
+# the final sorted results returned (a safety ceiling, not a search limit).
+# 100_000 is larger than any realistic collection so it effectively means "all".
+DEFAULT_RETRIEVAL_TOP_K = 100_000
 
 
 def retrieve(

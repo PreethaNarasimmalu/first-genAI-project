@@ -87,13 +87,21 @@ def similarity_search(
     filters: dict[str, Any] | None = None,
     top_k: int = DEFAULT_TOP_K,
 ) -> list[dict[str, Any]]:
-    """Run a vector similarity search against the restaurant collection.
+    """Fetch all documents matching *filters* and rank by cosine similarity.
+
+    Uses ``collection.get()`` instead of ``collection.query()`` to avoid the
+    SQLite "too many SQL variables" error that occurs when the collection is
+    large (ChromaDB's query() builds a WHERE id IN (...) clause that exceeds
+    SQLite's variable limit at ~51 k rows).
+
+    All matching documents are fetched with their embeddings, cosine similarity
+    is computed via numpy, and results are returned sorted by distance
+    (ascending — lower = more similar), capped at ``top_k``.
 
     Args:
         collection: ChromaDB collection to search.
         query_embedding: Embedding vector for the search query.
         filters: Optional ChromaDB ``where`` clause for metadata filtering.
-                 Example: ``{"location": {"$eq": "Koramangala"}}``
         top_k: Maximum number of results to return.
 
     Returns:
@@ -103,26 +111,46 @@ def similarity_search(
             - ``metadata``: Metadata dict stored at upsert time
             - ``distance``: Cosine distance from query (lower = more similar)
     """
-    count = collection.count()
-    if count == 0:
+    import numpy as np
+
+    if collection.count() == 0:
         return []
 
-    kwargs: dict[str, Any] = {
-        "query_embeddings": [query_embedding],
-        "n_results": min(top_k, count),
-        "include": ["documents", "metadatas", "distances"],
+    get_kwargs: dict[str, Any] = {
+        "include": ["embeddings", "documents", "metadatas"],
     }
     if filters:
-        kwargs["where"] = filters
+        get_kwargs["where"] = filters
 
-    results = collection.query(**kwargs)
+    result = collection.get(**get_kwargs)
 
-    ids = results.get("ids", [[]])[0]
-    docs = results.get("documents", [[]])[0]
-    metas = results.get("metadatas", [[]])[0]
-    dists = results.get("distances", [[]])[0]
+    ids: list[str] = result.get("ids") or []
+    embeddings = result.get("embeddings")
+    documents = result.get("documents") or []
+    metadatas = result.get("metadatas") or []
+
+    if not ids or embeddings is None or len(embeddings) == 0:
+        return []
+
+    # Compute cosine distances: distance = 1 − cosine_similarity
+    q = np.array(query_embedding, dtype=np.float32)
+    q_norm = q / (np.linalg.norm(q) + 1e-10)
+
+    emb_matrix = np.array(embeddings, dtype=np.float32)
+    norms = np.linalg.norm(emb_matrix, axis=1, keepdims=True)
+    emb_matrix /= norms + 1e-10
+
+    distances: np.ndarray = 1.0 - (emb_matrix @ q_norm)
+
+    # Sort ascending (most similar first) and cap at top_k
+    order = np.argsort(distances)[:top_k]
 
     return [
-        {"id": doc_id, "document": doc, "metadata": meta, "distance": dist}
-        for doc_id, doc, meta, dist in zip(ids, docs, metas, dists)
+        {
+            "id": ids[i],
+            "document": documents[i],
+            "metadata": metadatas[i],
+            "distance": float(distances[i]),
+        }
+        for i in order
     ]

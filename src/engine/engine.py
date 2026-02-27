@@ -53,23 +53,18 @@ def recommend(
     """
     semantic_query, filters = build_query(prefs)
 
-    # Fetch ALL documents that match the ChromaDB WHERE clause (meal_type,
-    # rating, price, online_order filters are applied there). We use
-    # collection.count() as top_k so nothing is cut off before post-filtering.
-    # Location and cuisine cannot be expressed as ChromaDB equality filters
-    # (the dataset uses sub-locations like "Koramangala 5th Block" and
-    # comma-separated cuisine strings), so those are applied as post-filters.
-    if collection is None:
-        from src.indexing.vector_store import get_client, get_collection
-        collection = get_collection(get_client())
-
-    top_k = max(collection.count(), 1)
-
+    # similarity_search() now uses collection.get() + numpy cosine similarity
+    # instead of collection.query(), so there is no SQLite variable limit.
+    # It fetches ALL documents that match the ChromaDB WHERE clause (meal_type,
+    # rating, price, online_order) and returns them ranked by similarity.
+    # Location and cuisine are substring-matched as post-filters below because
+    # ChromaDB equality filters cannot handle "Koramangala 5th Block" matching
+    # a user query of "Koramangala", or comma-separated cuisine_str fields.
     raw_results = retrieve(
         semantic_query,
         filters,
         collection=collection,
-        top_k=top_k,
+        top_k=retrieval_top_k,
     )
 
     # Location post-filter: substring match handles "Koramangala 5th Block"
