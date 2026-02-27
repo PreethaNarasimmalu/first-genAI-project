@@ -216,12 +216,13 @@ header, .stAppHeader,
 [data-testid="stRadio"] label > div:first-child { display: none !important; }
 
 /* Toggle — label left, switch right */
-[data-testid="stToggle"] > label {
+[data-testid="stToggle"] label {
   display: flex !important;
   flex-direction: row-reverse !important;
   justify-content: space-between !important;
   width: 100% !important;
   align-items: center !important;
+  gap: 1rem !important;
 }
 [data-testid="stToggle"] p {
   font-size: 0.875rem !important;
