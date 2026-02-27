@@ -17,27 +17,36 @@ from pathlib import Path
 
 import streamlit as st
 
-# ── Inject Streamlit secrets into os.environ so engine code can read them ──
-# Wrapped in try/except because st.secrets raises StreamlitSecretNotFoundError
-# when no secrets file exists (e.g. local dev without .streamlit/secrets.toml)
-try:
-    for _key in ("GROQ_API_KEY",):
-        if _key in st.secrets:
-            os.environ[_key] = st.secrets[_key]
-except Exception:
-    pass  # No secrets file — fall back to .env / environment variables
-
-# ── Ensure project root is importable ─────────────────────────────────────
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-# ---------------------------------------------------------------------------
-# Page config (must come before any other st.* call)
-# ---------------------------------------------------------------------------
+# ── Page config — must be the very first st.* call ────────────────────────
 st.set_page_config(
     page_title="Bangalore Restaurant Finder",
     page_icon="🍽️",
     layout="wide",
 )
+
+# ── Inject Streamlit secrets into os.environ so engine code can read them ──
+# Use .get() on each key individually so one missing key never blocks others.
+for _key in ("GROQ_API_KEY",):
+    if not os.environ.get(_key):          # skip if already set in environment
+        try:
+            _val = st.secrets.get(_key)   # returns None if key absent
+            if _val:
+                os.environ[_key] = str(_val)
+        except Exception:
+            pass  # No secrets file — fall back to .env / environment variables
+
+# ── Fail fast with a helpful message if the key is still missing ──────────
+if not os.environ.get("GROQ_API_KEY"):
+    st.error(
+        "**GROQ_API_KEY is missing.**\n\n"
+        "Open your app's **Settings → Secrets** and add:\n"
+        "```toml\nGROQ_API_KEY = \"gsk_your_key_here\"\n```\n"
+        "Make sure the value is in **double quotes** (TOML format)."
+    )
+    st.stop()
+
+# ── Ensure project root is importable ─────────────────────────────────────
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # ---------------------------------------------------------------------------
 # One-time resource: build / load the ChromaDB collection
