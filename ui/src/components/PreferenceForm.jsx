@@ -128,24 +128,24 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
     >
       <div className="p-5 space-y-4">
 
-        {/* Location — required */}
-        <div>
-          <Label htmlFor="location" required>Location</Label>
-          <Select id="location" value={form.location} onChange={set('location')} disabled={metaLoading} error={errors.location}>
-            <option value="">Select a location</option>
-            {locations.map(l => <option key={l} value={l}>{l}</option>)}
-          </Select>
-          <FieldError message={errors.location} />
-        </div>
-
-        {/* Cuisine — required */}
-        <div>
-          <Label htmlFor="cuisine" required>Cuisine</Label>
-          <Select id="cuisine" value={form.cuisine} onChange={set('cuisine')} disabled={metaLoading} error={errors.cuisine}>
-            <option value="">Select a cuisine</option>
-            {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
-          </Select>
-          <FieldError message={errors.cuisine} />
+        {/* Location + Cuisine — required, side by side */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="location" required>Location</Label>
+            <Select id="location" value={form.location} onChange={set('location')} disabled={metaLoading} error={errors.location}>
+              <option value="">Select a location</option>
+              {locations.map(l => <option key={l} value={l}>{l}</option>)}
+            </Select>
+            <FieldError message={errors.location} />
+          </div>
+          <div>
+            <Label htmlFor="cuisine" required>Cuisine</Label>
+            <Select id="cuisine" value={form.cuisine} onChange={set('cuisine')} disabled={metaLoading} error={errors.cuisine}>
+              <option value="">Select a cuisine</option>
+              {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
+            </Select>
+            <FieldError message={errors.cuisine} />
+          </div>
         </div>
 
         {/* Budget — optional */}
@@ -170,6 +170,16 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
         <div>
           <Label htmlFor="min_rating">Minimum rating <span className="normal-case font-normal text-muted">(optional)</span></Label>
           <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setForm(f => ({ ...f, min_rating: '' }))}
+              className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all
+                ${!form.min_rating
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white text-muted border-border hover:border-primary hover:text-primary'}`}
+            >
+              Any
+            </button>
             {[3.0, 3.5, 4.0, 4.5].map(r => (
               <button
                 key={r}
@@ -180,7 +190,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
                     ? 'bg-primary text-white border-primary'
                     : 'bg-white text-muted border-border hover:border-primary hover:text-primary'}`}
               >
-                ★ {r}+
+                ★{r}+
               </button>
             ))}
           </div>
