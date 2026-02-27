@@ -60,7 +60,14 @@ def recommend(request: Request, body: UserPreference) -> RecommendationResponse:
         body.model_dump(exclude_none=True),
     )
 
-    candidates = run_engine(body, collection=collection)
+    try:
+        candidates = run_engine(body, collection=collection)
+    except Exception as exc:
+        logger.exception("Engine crashed during retrieval/ranking: %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Retrieval error: {type(exc).__name__}: {exc}",
+        ) from exc
 
     if not candidates:
         return RecommendationResponse(
