@@ -176,7 +176,14 @@ html, body, .stApp {
 }
 [data-testid="stRadio"] label > div:first-child { display: none !important; }
 
-/* Toggle */
+/* Toggle — label left, switch right */
+[data-testid="stToggle"] > label {
+  display: flex !important;
+  flex-direction: row-reverse !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  align-items: center !important;
+}
 [data-testid="stToggle"] p {
   font-size: 0.875rem !important;
   color: #1C1C1C !important;
@@ -385,22 +392,23 @@ with col_cui:
 
 st.markdown('<div class="zai-label">Max budget (₹ for two)</div>', unsafe_allow_html=True)
 max_price = st.number_input(
-    "max_price", min_value=0, max_value=10_000, value=0, step=100,
+    "max_price", min_value=1, max_value=10_000, value=None, step=100,
     placeholder="e.g. 800 (optional)",
     label_visibility="collapsed",
 )
 
-st.markdown('<div class="zai-label">Minimum rating</div>', unsafe_allow_html=True)
+st.markdown('<div class="zai-label">Minimum rating <span style="font-weight:400;text-transform:none;color:#9ca3af">(optional)</span></div>', unsafe_allow_html=True)
 rating_choice = st.radio(
     "min_rating",
-    ["Any", "★ 3.0+", "★ 3.5+", "★ 4.0+", "★ 4.5+"],
+    ["★ 3+", "★ 3.5+", "★ 4+", "★ 4.5+"],
     horizontal=True,
+    index=None,
     label_visibility="collapsed",
 )
-_rating_map = {"Any": 0.0, "★ 3.0+": 3.0, "★ 3.5+": 3.5, "★ 4.0+": 4.0, "★ 4.5+": 4.5}
-min_rating = _rating_map[rating_choice]
+_rating_map = {"★ 3+": 3.0, "★ 3.5+": 3.5, "★ 4+": 4.0, "★ 4.5+": 4.5}
+min_rating = _rating_map[rating_choice] if rating_choice else 0.0
 
-st.markdown('<div class="zai-label">Meal type</div>', unsafe_allow_html=True)
+st.markdown('<div class="zai-label">Meal type <span style="font-weight:400;text-transform:none;color:#9ca3af">(optional)</span></div>', unsafe_allow_html=True)
 meal_type = st.selectbox(
     "meal_type",
     ["", "Dine-out", "Delivery", "Buffet", "Cafes", "Desserts", "Pubs and bars"],
@@ -411,7 +419,7 @@ meal_type = st.selectbox(
 online_order = st.toggle("Online ordering available")
 book_table   = st.toggle("Table booking available")
 
-st.markdown('<div class="zai-label">Anything specific?</div>', unsafe_allow_html=True)
+st.markdown('<div class="zai-label">Anything specific? <span style="font-weight:400;text-transform:none;color:#9ca3af">(optional)</span></div>', unsafe_allow_html=True)
 free_text = st.text_area(
     "free_text",
     placeholder='e.g. "Romantic rooftop with cocktails"',
