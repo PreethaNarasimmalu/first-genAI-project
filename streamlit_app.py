@@ -142,7 +142,7 @@ header, .stAppHeader,
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
 }
 
-/* Number input — hide Streamlit ± buttons; show native spin arrows on hover only */
+/* Number input — hide Streamlit ± buttons; show native ▲▼ spin arrows on hover only */
 [data-testid="stNumberInputStepDown"],
 [data-testid="stNumberInputStepUp"] {
   display: none !important;
@@ -153,20 +153,22 @@ header, .stAppHeader,
   font-size: 0.875rem !important;
   width: 100% !important;
   background: white !important;
+  -moz-appearance: textfield !important;
 }
 [data-testid="stNumberInput"] input:focus {
   border-color: #E23744 !important;
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
   outline: none !important;
 }
-/* Hide native spin buttons by default */
+/* Hide native ▲▼ spin buttons by default */
 [data-testid="stNumberInput"] input::-webkit-outer-spin-button,
 [data-testid="stNumberInput"] input::-webkit-inner-spin-button {
   opacity: 0;
   cursor: pointer;
   transition: opacity 150ms;
+  -webkit-appearance: inner-spin-button !important;
 }
-/* Show native spin buttons (up/down arrows) on hover */
+/* Show native ▲▼ spin buttons on hover */
 [data-testid="stNumberInput"]:hover input::-webkit-outer-spin-button,
 [data-testid="stNumberInput"]:hover input::-webkit-inner-spin-button {
   opacity: 1;
@@ -196,8 +198,8 @@ header, .stAppHeader,
   min-width: 0 !important;
   border: 1px solid #E8E8E8 !important;
   border-radius: 0.5rem !important;
-  padding: 0.3rem 0.25rem !important;
-  font-size: 0.75rem !important;
+  padding: 0.6rem 0.25rem !important;
+  font-size: 0.875rem !important;
   font-weight: 600 !important;
   color: #696969 !important;
   cursor: pointer;
@@ -216,17 +218,24 @@ header, .stAppHeader,
 [data-testid="stRadio"] label > div:first-child { display: none !important; }
 
 /* Toggle — label left, switch right */
+[data-testid="stToggle"] {
+  width: 100% !important;
+}
 [data-testid="stToggle"] label {
   display: flex !important;
-  flex-direction: row-reverse !important;
+  flex-direction: row !important;
   justify-content: space-between !important;
   width: 100% !important;
   align-items: center !important;
   gap: 1rem !important;
 }
+[data-testid="stToggle"] label > div:last-child {
+  margin-left: auto !important;
+}
 [data-testid="stToggle"] p {
   font-size: 0.875rem !important;
   color: #1C1C1C !important;
+  flex: 1 !important;
 }
 
 /* Primary button — Zomato red */
