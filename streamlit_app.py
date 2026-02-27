@@ -121,7 +121,7 @@ header, .stAppHeader,
 .zai-label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #1C1C1C;
+  color: #696969;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 0.25rem;
