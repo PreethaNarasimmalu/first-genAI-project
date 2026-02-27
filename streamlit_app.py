@@ -168,6 +168,7 @@ html, body, .stApp {
   transition: all 150ms;
   background: white !important;
   justify-content: center !important;
+  white-space: nowrap !important;
 }
 [data-testid="stRadio"] label:has(input:checked) {
   background: #E23744 !important;
