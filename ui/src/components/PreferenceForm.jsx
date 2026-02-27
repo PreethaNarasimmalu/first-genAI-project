@@ -165,16 +165,16 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
                          [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             {/* Custom stepper — visible only on hover */}
-            <div className="absolute right-0 top-0 h-full flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute right-0 top-0 h-full flex flex-col opacity-0 group-hover:opacity-100 transition-opacity border-l border-border rounded-r-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, max_price: ((Number(f.max_price) || 0) + 100).toString() }))}
-                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 rounded-tr-lg border-l border-t border-border text-[10px] leading-none select-none"
+                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 border-b border-border text-[10px] leading-none select-none"
               >▲</button>
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, max_price: Math.max(0, (Number(f.max_price) || 0) - 100).toString() }))}
-                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 rounded-br-lg border-l border-b border-border text-[10px] leading-none select-none"
+                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 text-[10px] leading-none select-none"
               >▼</button>
             </div>
           </div>
