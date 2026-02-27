@@ -152,6 +152,7 @@ header, .stAppHeader,
   border-radius: 0.5rem !important;
   font-size: 0.875rem !important;
   width: 100% !important;
+  background: white !important;
 }
 [data-testid="stNumberInput"] input:focus {
   border-color: #E23744 !important;
@@ -177,6 +178,7 @@ header, .stAppHeader,
   border-radius: 0.5rem !important;
   font-size: 0.875rem !important;
   resize: none !important;
+  background: white !important;
 }
 [data-testid="stTextArea"] textarea:focus {
   border-color: #E23744 !important;
