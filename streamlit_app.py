@@ -394,7 +394,7 @@ with col_cui:
 st.markdown('<div class="zai-label">Max budget (₹ for two)</div>', unsafe_allow_html=True)
 max_price = st.number_input(
     "max_price", min_value=1, max_value=10_000, value=None, step=100,
-    placeholder="e.g. 800 (optional)",
+    placeholder="₹  e.g. 800 (optional)",
     label_visibility="collapsed",
 )
 
