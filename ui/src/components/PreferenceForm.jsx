@@ -170,27 +170,17 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
         <div>
           <Label htmlFor="min_rating">Minimum rating <span className="normal-case font-normal text-muted">(optional)</span></Label>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setForm(f => ({ ...f, min_rating: '' }))}
-              className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all
-                ${!form.min_rating
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-muted border-border hover:border-primary hover:text-primary'}`}
-            >
-              Any
-            </button>
             {[3.0, 3.5, 4.0, 4.5].map(r => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setForm(f => ({ ...f, min_rating: f.min_rating === r.toFixed(1) ? '' : r.toFixed(1) }))}
-                className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all
+                className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all
                   ${form.min_rating === r.toFixed(1)
                     ? 'bg-primary text-white border-primary'
-                    : 'bg-white text-muted border-border hover:border-primary hover:text-primary'}`}
+                    : 'bg-white text-dark border-border hover:border-primary hover:text-primary'}`}
               >
-                ★{r}+
+                ★ {r}+
               </button>
             ))}
           </div>
