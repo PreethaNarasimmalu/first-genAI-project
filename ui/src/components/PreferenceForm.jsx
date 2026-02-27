@@ -41,10 +41,10 @@ function Select({ id, value, onChange, children, disabled, error }) {
   )
 }
 
-function Toggle({ id, checked, onChange, label }) {
+function Toggle({ id, checked, onChange, label, highlight }) {
   return (
-    <label htmlFor={id} className="flex items-center justify-between cursor-pointer group">
-      <span className="text-sm text-dark group-hover:text-primary transition-colors">{label}</span>
+    <label htmlFor={id} className="flex items-center justify-between cursor-pointer">
+      <span className={`text-sm ${highlight ? 'text-primary' : 'text-dark'}`}>{label}</span>
       <div className="relative">
         <input
           id={id}
@@ -202,6 +202,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
             label="Online ordering available"
             checked={form.online_order}
             onChange={v => setForm(f => ({ ...f, online_order: v }))}
+            highlight
           />
           <Toggle
             id="book_table"
