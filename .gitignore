@@ -15,8 +15,8 @@ build/
 
 # Data files (large, generated)
 data/raw/
-data/clean/
-data/vectordb/
+# data/clean/ and data/vectordb/ are intentionally tracked so Render has the
+# pre-built index — commit them from your local machine after indexing.
 
 # Node / UI
 ui/node_modules/
