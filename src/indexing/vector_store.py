@@ -81,22 +81,23 @@ def upsert_documents(
     )
 
 
+# ChromaDB's SQLite backend crashes with "too many SQL variables" when a
+# single get() call tries to fetch thousands of rows at once (SQLite's
+# SQLITE_MAX_VARIABLE_NUMBER limit). Paginating at this size stays safely
+# below that limit on every SQLite version.
+_GET_BATCH_SIZE = 5_000
+
+
 def similarity_search(
     collection: chromadb.Collection,
     query_embedding: list[float],
     filters: dict[str, Any] | None = None,
     top_k: int = DEFAULT_TOP_K,
 ) -> list[dict[str, Any]]:
-    """Fetch all documents matching *filters* and rank by cosine similarity.
+    """Fetch all matching documents in batches, then rank by cosine similarity.
 
-    Uses ``collection.get()`` instead of ``collection.query()`` to avoid the
-    SQLite "too many SQL variables" error that occurs when the collection is
-    large (ChromaDB's query() builds a WHERE id IN (...) clause that exceeds
-    SQLite's variable limit at ~51 k rows).
-
-    All matching documents are fetched with their embeddings, cosine similarity
-    is computed via numpy, and results are returned sorted by distance
-    (ascending — lower = more similar), capped at ``top_k``.
+    Paginates ``collection.get()`` with ``limit``/``offset`` so each call
+    stays below SQLite's variable limit, regardless of collection size.
 
     Args:
         collection: ChromaDB collection to search.
@@ -116,27 +117,47 @@ def similarity_search(
     if collection.count() == 0:
         return []
 
-    get_kwargs: dict[str, Any] = {
-        "include": ["embeddings", "documents", "metadatas"],
-    }
-    if filters:
-        get_kwargs["where"] = filters
+    # Collect all matching documents across paginated batches
+    all_ids: list[str] = []
+    all_embeddings: list[list[float]] = []
+    all_documents: list[str] = []
+    all_metadatas: list[dict[str, Any]] = []
 
-    result = collection.get(**get_kwargs)
+    offset = 0
+    while True:
+        get_kwargs: dict[str, Any] = {
+            "limit": _GET_BATCH_SIZE,
+            "offset": offset,
+            "include": ["embeddings", "documents", "metadatas"],
+        }
+        if filters:
+            get_kwargs["where"] = filters
 
-    ids: list[str] = result.get("ids") or []
-    embeddings = result.get("embeddings")
-    documents = result.get("documents") or []
-    metadatas = result.get("metadatas") or []
+        batch = collection.get(**get_kwargs)
+        batch_ids: list[str] = batch.get("ids") or []
+        if not batch_ids:
+            break
 
-    if not ids or embeddings is None or len(embeddings) == 0:
+        all_ids.extend(batch_ids)
+        all_documents.extend(batch.get("documents") or [])
+        all_metadatas.extend(batch.get("metadatas") or [])
+
+        batch_embeddings = batch.get("embeddings")
+        if batch_embeddings is not None:
+            all_embeddings.extend(batch_embeddings)
+
+        offset += len(batch_ids)
+        if len(batch_ids) < _GET_BATCH_SIZE:
+            break  # final (possibly partial) batch
+
+    if not all_ids or not all_embeddings:
         return []
 
     # Compute cosine distances: distance = 1 − cosine_similarity
     q = np.array(query_embedding, dtype=np.float32)
     q_norm = q / (np.linalg.norm(q) + 1e-10)
 
-    emb_matrix = np.array(embeddings, dtype=np.float32)
+    emb_matrix = np.array(all_embeddings, dtype=np.float32)
     norms = np.linalg.norm(emb_matrix, axis=1, keepdims=True)
     emb_matrix /= norms + 1e-10
 
@@ -147,9 +168,9 @@ def similarity_search(
 
     return [
         {
-            "id": ids[i],
-            "document": documents[i],
-            "metadata": metadatas[i],
+            "id": all_ids[i],
+            "document": all_documents[i],
+            "metadata": all_metadatas[i],
             "distance": float(distances[i]),
         }
         for i in order
