@@ -43,9 +43,9 @@ function Select({ id, value, onChange, children, disabled, error }) {
 
 function Toggle({ id, checked, onChange, label }) {
   return (
-    <label htmlFor={id} className="flex w-full items-center justify-between cursor-pointer">
-      <span className="text-sm text-dark">{label}</span>
-      <div className="relative flex-shrink-0">
+    <label htmlFor={id} className="flex w-full items-center cursor-pointer">
+      <span className="text-sm text-dark flex-1">{label}</span>
+      <div className="relative flex-shrink-0 ml-4">
         <input
           id={id}
           type="checkbox"
@@ -151,31 +151,45 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
         {/* Budget — optional */}
         <div>
           <Label htmlFor="max_price">Max budget (₹ for two)</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm font-medium">₹</span>
+          <div className="group relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm font-medium pointer-events-none">₹</span>
             <input
               id="max_price"
               type="number"
-              min="1"
+              min="0"
               placeholder="e.g. 800 (optional)"
               value={form.max_price}
               onChange={set('max_price')}
-              className="w-full border border-border rounded-lg pl-7 pr-3 py-2 text-sm text-dark
-                         focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full border border-border rounded-lg pl-7 pr-8 py-2 text-sm text-dark
+                         focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                         [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
+            {/* Custom stepper — visible only on hover */}
+            <div className="absolute right-0 top-0 h-full flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, max_price: ((Number(f.max_price) || 0) + 100).toString() }))}
+                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 rounded-tr-lg border-l border-t border-border text-[10px] leading-none select-none"
+              >▲</button>
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, max_price: Math.max(0, (Number(f.max_price) || 0) - 100).toString() }))}
+                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 rounded-br-lg border-l border-b border-border text-[10px] leading-none select-none"
+              >▼</button>
+            </div>
           </div>
         </div>
 
         {/* Min Rating — optional */}
         <div>
           <Label htmlFor="min_rating">Minimum rating <span className="normal-case font-normal text-muted">(optional)</span></Label>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {[3.0, 3.5, 4.0, 4.5].map(r => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setForm(f => ({ ...f, min_rating: f.min_rating === r.toFixed(1) ? '' : r.toFixed(1) }))}
-                className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all
+                className={`w-full py-3 rounded-lg border text-base font-medium transition-all
                   ${form.min_rating === r.toFixed(1)
                     ? 'bg-primary text-white border-primary'
                     : 'bg-white text-dark border-border hover:border-primary hover:text-primary'}`}
