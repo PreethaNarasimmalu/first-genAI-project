@@ -169,13 +169,17 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, max_price: ((Number(f.max_price) || 0) + 100).toString() }))}
-                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 text-[10px] leading-none select-none"
-              >▲</button>
+                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 select-none"
+              >
+                <svg width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M4 0L8 5H0L4 0Z"/></svg>
+              </button>
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, max_price: Math.max(0, (Number(f.max_price) || 0) - 100).toString() }))}
-                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 text-[10px] leading-none select-none"
-              >▼</button>
+                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 select-none"
+              >
+                <svg width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M4 5L0 0H8L4 5Z"/></svg>
+              </button>
             </div>
           </div>
         </div>
