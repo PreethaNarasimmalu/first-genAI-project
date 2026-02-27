@@ -64,17 +64,31 @@ html, body, .stApp {
   color: #1C1C1C;
 }
 
-/* ── Hide Streamlit chrome ── */
+/* ── Hide Streamlit chrome + kill every source of top whitespace ── */
 [data-testid="stHeader"],
 [data-testid="stDecoration"],
 [data-testid="stToolbar"],
-#MainMenu, footer, .stDeployButton { display: none !important; }
+header, .stAppHeader,
+#MainMenu, footer, .stDeployButton {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+}
 
 /* ── Centered container: zero top-padding so hero banner bleeds to the top ── */
 .main .block-container {
   padding-top: 0 !important;
   padding-bottom: 3rem !important;
   max-width: 700px !important;
+}
+
+/* Belt-and-suspenders: every Streamlit wrapper above the hero */
+.stApp > section > div,
+.stApp > section,
+.stMain > div,
+.main > div:first-child {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
 }
 
 /* ── Hero banner (full-width trick from centered layout) ── */
@@ -107,7 +121,7 @@ html, body, .stApp {
 .zai-label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #696969;
+  color: #1C1C1C;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 0.25rem;
@@ -128,15 +142,33 @@ html, body, .stApp {
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
 }
 
-/* Number input */
+/* Number input — hide Streamlit ± buttons; show native spin arrows on hover only */
+[data-testid="stNumberInputStepDown"],
+[data-testid="stNumberInputStepUp"] {
+  display: none !important;
+}
 [data-testid="stNumberInput"] input {
   border: 1px solid #E8E8E8 !important;
   border-radius: 0.5rem !important;
   font-size: 0.875rem !important;
+  width: 100% !important;
 }
 [data-testid="stNumberInput"] input:focus {
   border-color: #E23744 !important;
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
+  outline: none !important;
+}
+/* Hide native spin buttons by default */
+[data-testid="stNumberInput"] input::-webkit-outer-spin-button,
+[data-testid="stNumberInput"] input::-webkit-inner-spin-button {
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+/* Show native spin buttons (up/down arrows) on hover */
+[data-testid="stNumberInput"]:hover input::-webkit-outer-spin-button,
+[data-testid="stNumberInput"]:hover input::-webkit-inner-spin-button {
+  opacity: 1;
 }
 
 /* Textarea */
@@ -151,15 +183,18 @@ html, body, .stApp {
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
 }
 
-/* Radio (rating pills) */
+/* Radio (rating pills) — equal-width via flex-basis 0% */
 [data-testid="stRadio"] > div {
+  display: flex !important;
+  flex-wrap: nowrap !important;
   gap: 0.4rem !important;
 }
 [data-testid="stRadio"] label {
-  flex: 1 !important;
+  flex: 1 1 0% !important;   /* basis=0 → all grow equally regardless of text length */
+  min-width: 0 !important;
   border: 1px solid #E8E8E8 !important;
   border-radius: 0.5rem !important;
-  padding: 0.3rem 0.4rem !important;
+  padding: 0.3rem 0.25rem !important;
   font-size: 0.75rem !important;
   font-weight: 600 !important;
   color: #696969 !important;
@@ -169,6 +204,7 @@ html, body, .stApp {
   background: white !important;
   justify-content: center !important;
   white-space: nowrap !important;
+  overflow: hidden !important;
 }
 [data-testid="stRadio"] label:has(input:checked) {
   background: #E23744 !important;
