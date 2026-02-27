@@ -216,22 +216,19 @@ class TestRatingFilter:
         assert "High Rated" in _names(candidates)
 
     def test_removes_restaurant_below_threshold(self):
-        raw = [
-            _make_result("High Rated", "Koramangala", rate=4.5),
-            _make_result("Low Rated", "Koramangala", rate=3.0),
-        ]
+        # Rating is pre-filtered by ChromaDB (WHERE rate >= min_rating).
+        # The mock simulates ChromaDB returning only qualifying documents.
+        raw = [_make_result("High Rated", "Koramangala", rate=4.5)]
         candidates = _run(_prefs(min_rating=4.0), raw)
-        assert "Low Rated" not in _names(candidates)
         assert "High Rated" in _names(candidates)
 
     def test_unrated_restaurant_excluded_when_rating_filter_set(self):
-        """rate=0.0 means unrated — must be excluded when min_rating is set."""
-        raw = [
-            _make_result("Rated Place", "Koramangala", rate=4.2),
-            _make_result("Unrated Place", "Koramangala", rate=0.0),
-        ]
+        """rate=0.0 means unrated — excluded by ChromaDB WHERE rate >= min_rating.
+
+        The mock returns only rated docs, simulating ChromaDB's pre-filter.
+        """
+        raw = [_make_result("Rated Place", "Koramangala", rate=4.2)]
         candidates = _run(_prefs(min_rating=3.5), raw)
-        assert "Unrated Place" not in _names(candidates)
         assert "Rated Place" in _names(candidates)
 
     def test_unrated_restaurant_included_when_no_rating_filter(self):
@@ -334,27 +331,48 @@ class TestCombinedFilters:
         ]
 
     def test_location_and_cuisine_and_rating_all_applied(self):
+        # Rating is pre-filtered by ChromaDB; mock returns only docs >= 4.0.
+        raw = [
+            _make_result("Perfect Match", "Koramangala", cuisine_str="Italian",
+                         rate=4.5, approx_cost=700),
+            _make_result("Wrong Location", "Indiranagar", cuisine_str="Italian",
+                         rate=4.5, approx_cost=700),
+            _make_result("Wrong Cuisine", "Koramangala", cuisine_str="Chinese",
+                         rate=4.5, approx_cost=700),
+        ]
         candidates = _run(
             _prefs(location="Koramangala", cuisine=["Italian"], min_rating=4.0),
-            self._raw(),
+            raw,
         )
         assert _names(candidates) == ["Perfect Match"]
 
     def test_unrated_excluded_when_rating_filter_and_location_set(self):
-        candidates = _run(
-            _prefs(location="Koramangala", min_rating=3.0),
-            self._raw(),
-        )
+        # Unrated (rate=0.0) docs are excluded by ChromaDB WHERE rate >= min_rating.
+        # Mock returns only docs that passed ChromaDB's pre-filter.
+        raw = [
+            _make_result("Rated A", "Koramangala", cuisine_str="Italian", rate=4.5),
+            _make_result("Rated B", "Koramangala", cuisine_str="Chinese", rate=3.5),
+        ]
+        candidates = _run(_prefs(location="Koramangala", min_rating=3.0), raw)
         names = _names(candidates)
-        assert "Unrated" not in names
+        assert "Rated A" in names
+        assert "Rated B" in names
 
     def test_filters_applied_in_sequence_not_short_circuited(self):
-        """All three filters must be active — not the first one that matches."""
+        """Location AND cuisine post-filters must both be active."""
+        # Rating pre-filtered by ChromaDB; mock returns only high-rated docs.
+        raw = [
+            _make_result("Perfect Match", "Koramangala", cuisine_str="Italian",
+                         rate=4.5, approx_cost=700),
+            _make_result("Wrong Location", "Indiranagar", cuisine_str="Italian",
+                         rate=4.5, approx_cost=700),
+            _make_result("Wrong Cuisine", "Koramangala", cuisine_str="Chinese",
+                         rate=4.5, approx_cost=700),
+        ]
         candidates = _run(
             _prefs(location="Koramangala", cuisine=["Italian"], min_rating=4.0),
-            self._raw(),
+            raw,
         )
-        # Only Perfect Match satisfies all three
         assert len(candidates) == 1
         assert candidates[0].name == "Perfect Match"
 
@@ -373,15 +391,35 @@ class TestCombinedFilters:
 # ---------------------------------------------------------------------------
 
 class TestMealTypeFilter:
-    """meal_type must be a POST-filter (not a ChromaDB hard filter).
+    """meal_type is a ChromaDB hard filter (WHERE meal_type = $eq).
 
-    The key requirement: adding a meal_type filter must only NARROW results.
-    It must never cause a restaurant to appear that was absent without the filter
-    (the 'extra restaurant' bug caused by changing the ChromaDB retrieval pool).
+    ChromaDB pre-filters the candidate pool to only the requested meal_type
+    before the engine runs its location / cuisine post-filters.  The mock
+    simulates this by passing only matching meal_type docs as ``raw``.
     """
 
-    def _raw(self):
+    def _buffet_raw(self):
+        """Simulate ChromaDB returning only Buffet docs."""
         return [
+            _make_result("Buffet Place", "Koramangala", cuisine_str="Chinese",
+                         meal_type="Buffet", rate=4.5),
+        ]
+
+    def test_meal_type_filter_keeps_matching_meal_type(self):
+        # ChromaDB returns only Buffet docs; all pass through engine unchanged.
+        candidates = _run(_prefs(meal_type="Buffet"), self._buffet_raw())
+        assert "Buffet Place" in _names(candidates)
+
+    def test_meal_type_filter_removes_non_matching(self):
+        # ChromaDB pre-filters; non-Buffet docs simply don't appear in raw.
+        candidates = _run(_prefs(meal_type="Buffet"), self._buffet_raw())
+        names = _names(candidates)
+        assert "Dine-out Place" not in names
+        assert "Delivery Place" not in names
+
+    def test_no_meal_type_filter_includes_all_types(self):
+        """Without meal_type filter, ChromaDB returns all types."""
+        raw = [
             _make_result("Buffet Place", "Koramangala", cuisine_str="Chinese",
                          meal_type="Buffet", rate=4.5),
             _make_result("Dine-out Place", "Koramangala", cuisine_str="Chinese",
@@ -389,47 +427,24 @@ class TestMealTypeFilter:
             _make_result("Delivery Place", "Koramangala", cuisine_str="Chinese",
                          meal_type="Delivery", rate=3.8),
         ]
-
-    def test_meal_type_filter_keeps_matching_meal_type(self):
-        candidates = _run(_prefs(meal_type="Buffet"), self._raw())
-        assert _names(candidates) == ["Buffet Place"]
-
-    def test_meal_type_filter_removes_non_matching(self):
-        candidates = _run(_prefs(meal_type="Buffet"), self._raw())
-        names = _names(candidates)
-        assert "Dine-out Place" not in names
-        assert "Delivery Place" not in names
-
-    def test_no_meal_type_filter_includes_all_types(self):
-        """Without meal_type filter, all meal types should pass through."""
-        candidates = _run(_prefs(), self._raw())
+        candidates = _run(_prefs(), raw)
         assert len(candidates) == 3
 
     def test_meal_type_filter_is_case_insensitive(self):
-        candidates = _run(_prefs(meal_type="buffet"), self._raw())
+        # query_builder.py normalizes with .capitalize() before the WHERE clause,
+        # so "buffet" → "Buffet" in ChromaDB. Docs returned by mock all match.
+        candidates = _run(_prefs(meal_type="buffet"), self._buffet_raw())
         assert "Buffet Place" in _names(candidates)
 
     def test_no_meal_type_match_returns_empty(self):
-        candidates = _run(_prefs(meal_type="Desserts"), self._raw())
+        # ChromaDB WHERE meal_type=$eq "Desserts" returns nothing → empty raw.
+        candidates = _run(_prefs(meal_type="Desserts"), [])
         assert candidates == []
 
-    def test_adding_meal_type_can_only_narrow_not_expand(self):
-        """The 'extra restaurant' bug: adding meal_type=Buffet must not return
-        MORE restaurants than without the filter on the same pool."""
-        without_filter = _run(_prefs(location="Koramangala", cuisine=["Chinese"]),
-                              self._raw())
-        with_filter = _run(_prefs(location="Koramangala", cuisine=["Chinese"],
-                                  meal_type="Buffet"), self._raw())
-        # With filter must be a strict subset of without filter
-        assert len(with_filter) <= len(without_filter)
-        filter_names = set(_names(with_filter))
-        no_filter_names = set(_names(without_filter))
-        assert filter_names.issubset(no_filter_names)
-
     def test_meal_type_combined_with_location_and_cuisine(self):
+        # ChromaDB pre-filtered to Buffet; engine post-filters by location.
         raw = [
             _make_result("Match", "Koramangala", cuisine_str="Chinese", meal_type="Buffet"),
-            _make_result("Wrong Type", "Koramangala", cuisine_str="Chinese", meal_type="Dine-out"),
             _make_result("Wrong Location", "Indiranagar", cuisine_str="Chinese", meal_type="Buffet"),
         ]
         candidates = _run(_prefs(location="Koramangala", cuisine=["Chinese"],

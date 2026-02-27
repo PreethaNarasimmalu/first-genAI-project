@@ -67,18 +67,18 @@ def build_query(prefs: UserPreference) -> tuple[str, dict[str, Any]]:
         # approx_cost == 0 means "unknown" (stored as 0 fallback); exclude those
         conditions.append({"approx_cost": {"$lte": prefs.max_price}})
         conditions.append({"approx_cost": {"$gt": 0}})
-    # min_rating is intentionally excluded from hard filters — applying it in
-    # ChromaDB changes the semantic candidate pool, causing a restaurant that
-    # scores in the top 200 for "4+" to fall out of the top 200 for "3.5+"
-    # (counter-intuitive). Rating is post-filtered in engine.py instead.
-    #
-    # meal_type is intentionally excluded from hard filters for the same reason:
-    # using it as a ChromaDB filter changes the retrieval pool, which can
-    # counterintuitively surface restaurants that never appeared without the
-    # filter (because they were below the top-K cut-off in the broader search
-    # but rise to the top in the smaller, meal-type-specific pool). Instead,
-    # meal_type is included in the semantic query (above) and post-filtered in
-    # engine.py for consistent, monotone behaviour: more filters = fewer results.
+    if prefs.min_rating is not None:
+        # ChromaDB hard filter: only retrieve docs with rate >= min_rating.
+        # This dramatically shrinks the candidate pool before fetching, so we
+        # don't need to pull the entire collection just to post-filter by rating.
+        conditions.append({"rate": {"$gte": prefs.min_rating}})
+    if prefs.meal_type:
+        # ChromaDB hard filter: only retrieve docs matching this meal_type.
+        # Together with fetching all matching docs in engine.py, this guarantees
+        # every Buffet (or other type) restaurant in the DB is considered.
+        # Normalize to dataset casing ("Buffet", "Dine-out") — capitalize()
+        # uppercases only the first character, which matches the dataset values.
+        conditions.append({"meal_type": {"$eq": prefs.meal_type.capitalize()}})
     if prefs.online_order is not None:
         conditions.append({"online_order": {"$eq": prefs.online_order}})
     if prefs.book_table is not None:

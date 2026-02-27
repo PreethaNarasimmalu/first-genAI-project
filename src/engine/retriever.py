@@ -19,13 +19,9 @@ import chromadb
 from src.indexing.embedder import embed_documents
 from src.indexing.vector_store import get_client, get_collection, similarity_search
 
-# Retrieve more than we need so the ranker has enough unique candidates
-# after deduplication and post-filtering.
-# With the real ~51k-row Zomato dataset, strict post-filters (rating +
-# meal_type + location) can eliminate most of a 200-result pool. 2000 gives
-# enough headroom: even if 3 filters each cut results by 80%, we still have
-# 2000 × 0.2³ ≈ 16 unique restaurants to rank.
-DEFAULT_RETRIEVAL_TOP_K = 2000
+# Default top_k — overridden by engine.py to collection.count() so that
+# all ChromaDB-filtered documents are retrieved before post-filtering.
+DEFAULT_RETRIEVAL_TOP_K = 1000
 
 
 def retrieve(

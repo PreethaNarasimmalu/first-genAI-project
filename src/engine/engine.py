@@ -53,21 +53,27 @@ def recommend(
     """
     semantic_query, filters = build_query(prefs)
 
-    # Cap retrieval_top_k to the actual collection size so ChromaDB never
-    # errors on small collections (e.g. the 57-row sample dataset).
-    if collection is not None:
-        retrieval_top_k = min(retrieval_top_k, max(collection.count(), 1))
+    # Fetch ALL documents that match the ChromaDB WHERE clause (meal_type,
+    # rating, price, online_order filters are applied there). We use
+    # collection.count() as top_k so nothing is cut off before post-filtering.
+    # Location and cuisine cannot be expressed as ChromaDB equality filters
+    # (the dataset uses sub-locations like "Koramangala 5th Block" and
+    # comma-separated cuisine strings), so those are applied as post-filters.
+    if collection is None:
+        from src.indexing.vector_store import get_client, get_collection
+        collection = get_collection(get_client())
+
+    top_k = max(collection.count(), 1)
 
     raw_results = retrieve(
         semantic_query,
         filters,
         collection=collection,
-        top_k=retrieval_top_k,
+        top_k=top_k,
     )
 
-    # Apply location post-filter (substring match). The dataset has sub-location
-    # values like "Koramangala 5th Block" that fail an exact ChromaDB equality
-    # filter on "Koramangala", so we filter here instead.
+    # Location post-filter: substring match handles "Koramangala 5th Block"
+    # matching a user query of "Koramangala".
     if prefs.location:
         location_lower = prefs.location.lower()
         raw_results = [
@@ -75,9 +81,9 @@ def recommend(
             if location_lower in r["metadata"].get("location", "").lower()
         ]
 
-    # Apply cuisine post-filter on raw results (cuisine is a free-text
-    # comma-separated field so substring matching is more reliable than
-    # an exact ChromaDB equality filter).
+    # Cuisine post-filter: cuisine_str is a comma-separated free-text field
+    # ("North Indian, Chinese") — substring matching is more robust than
+    # exact equality.
     if prefs.cuisine:
         cuisine_lower = [c.lower() for c in prefs.cuisine]
         raw_results = [
@@ -86,29 +92,6 @@ def recommend(
                 cu in r["metadata"].get("cuisine_str", "").lower()
                 for cu in cuisine_lower
             )
-        ]
-
-    # Apply min_rating post-filter. Keeping this in ChromaDB changes the
-    # semantic candidate pool — a restaurant in the top 200 for "4+" can
-    # fall outside the top 200 for "3.5+" because more documents compete.
-    # Post-filtering guarantees consistent results regardless of threshold.
-    if prefs.min_rating is not None:
-        raw_results = [
-            r for r in raw_results
-            if r["metadata"].get("rate", 0.0) >= prefs.min_rating
-        ]
-
-    # Apply meal_type post-filter. Using meal_type as a ChromaDB hard filter
-    # changes the retrieval pool which counterintuitively causes a restaurant
-    # absent from "no filter" results to appear when a stricter filter is added
-    # (it was below the top-K cutoff in the broad pool but rises to the top in
-    # the narrower meal-type pool). Post-filtering keeps behaviour monotone:
-    # adding a filter can only remove results, never add new ones.
-    if prefs.meal_type:
-        meal_lower = prefs.meal_type.lower()
-        raw_results = [
-            r for r in raw_results
-            if r["metadata"].get("meal_type", "").lower() == meal_lower
         ]
 
     return rank(raw_results, max_price=prefs.max_price, top_n=final_top_n)
