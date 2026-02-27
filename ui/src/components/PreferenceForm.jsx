@@ -169,7 +169,7 @@ export default function PreferenceForm({ onSubmit, isLoading }) {
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, max_price: ((Number(f.max_price) || 0) + 100).toString() }))}
-                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 border-b border-border text-[10px] leading-none select-none"
+                className="flex-1 px-2 flex items-center justify-center text-muted hover:text-primary hover:bg-gray-100 text-[10px] leading-none select-none"
               >▲</button>
               <button
                 type="button"
