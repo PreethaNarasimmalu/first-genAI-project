@@ -1,8 +1,13 @@
-"""Streamlit app — runs the full engine in-process (no separate FastAPI backend).
+"""Streamlit app — visual design matches the React/Tailwind frontend exactly.
+
+Layout: centered single column  (no sidebar)
+  - Red hero banner  ("Zomato AI")
+  - White card form  (Location, Cuisine, Budget, Rating pills, Meal type, Toggles, Free text)
+  - HTML restaurant cards  (rank badge, gradient accent, cuisine tags, rating badge)
 
 Streamlit Community Cloud:
-  - Add GROQ_API_KEY in App Settings → Secrets
-  - First load builds the ChromaDB index from HuggingFace (takes a few minutes)
+  - Add GROQ_API_KEY in App Settings → Secrets (TOML: GROQ_API_KEY = "gsk_…")
+  - First load builds ChromaDB index from HuggingFace (~51 k rows, a few minutes)
   - All subsequent loads reuse the cached index instantly
 
 Run locally:
@@ -17,46 +22,307 @@ from pathlib import Path
 
 import streamlit as st
 
-# ── Page config — must be the very first st.* call ────────────────────────
+# ── Page config (must be first st.* call) ────────────────────────────────────
 st.set_page_config(
-    page_title="Bangalore Restaurant Finder",
+    page_title="Zomato AI",
     page_icon="🍽️",
-    layout="wide",
+    layout="centered",
 )
 
-# ── Inject Streamlit secrets into os.environ so engine code can read them ──
-# Use .get() on each key individually so one missing key never blocks others.
+# ── Inject Streamlit secrets → os.environ ────────────────────────────────────
 for _key in ("GROQ_API_KEY",):
-    if not os.environ.get(_key):          # skip if already set in environment
+    if not os.environ.get(_key):
         try:
-            _val = st.secrets.get(_key)   # returns None if key absent
+            _val = st.secrets.get(_key)
             if _val:
                 os.environ[_key] = str(_val)
         except Exception:
-            pass  # No secrets file — fall back to .env / environment variables
+            pass
 
-# ── Fail fast with a helpful message if the key is still missing ──────────
 if not os.environ.get("GROQ_API_KEY"):
     st.error(
         "**GROQ_API_KEY is missing.**\n\n"
         "Open your app's **Settings → Secrets** and add:\n"
         "```toml\nGROQ_API_KEY = \"gsk_your_key_here\"\n```\n"
-        "Make sure the value is in **double quotes** (TOML format)."
+        "Make sure the value is wrapped in **double quotes** (TOML format)."
     )
     st.stop()
 
-# ── Ensure project root is importable ─────────────────────────────────────
+# ── Project root on sys.path ──────────────────────────────────────────────────
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-# ---------------------------------------------------------------------------
-# One-time resource: build / load the ChromaDB collection
-# ---------------------------------------------------------------------------
+# ── Global CSS — matches React Tailwind theme exactly ────────────────────────
+st.markdown("""
+<style>
+/* ── Google Font ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* ── Reset / base ── */
+html, body, .stApp {
+  background-color: #F8F8F8 !important;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  color: #1C1C1C;
+}
+
+/* ── Hide Streamlit chrome ── */
+[data-testid="stHeader"],
+[data-testid="stDecoration"],
+[data-testid="stToolbar"],
+#MainMenu, footer, .stDeployButton { display: none !important; }
+
+/* ── Centered container: zero top-padding so hero banner bleeds to the top ── */
+.main .block-container {
+  padding-top: 0 !important;
+  padding-bottom: 3rem !important;
+  max-width: 700px !important;
+}
+
+/* ── Hero banner (full-width trick from centered layout) ── */
+.zai-hero {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #E23744;
+  padding: 3rem 1rem 3.5rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.zai-hero h1 {
+  color: white;
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.zai-hero p {
+  color: #fecdd3;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0.75rem 0 0;
+}
+
+/* ── Field section label ── */
+.zai-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #696969;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+  margin-top: 0.75rem;
+}
+.zai-label .req { color: #E23744; }
+
+/* ── Style Streamlit native widgets ── */
+/* Selectbox */
+[data-testid="stSelectbox"] > div > div {
+  border: 1px solid #E8E8E8 !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.875rem !important;
+  background: white !important;
+}
+[data-testid="stSelectbox"] > div > div:focus-within {
+  border-color: #E23744 !important;
+  box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
+}
+
+/* Number input */
+[data-testid="stNumberInput"] input {
+  border: 1px solid #E8E8E8 !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.875rem !important;
+}
+[data-testid="stNumberInput"] input:focus {
+  border-color: #E23744 !important;
+  box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
+}
+
+/* Textarea */
+[data-testid="stTextArea"] textarea {
+  border: 1px solid #E8E8E8 !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.875rem !important;
+  resize: none !important;
+}
+[data-testid="stTextArea"] textarea:focus {
+  border-color: #E23744 !important;
+  box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
+}
+
+/* Radio (rating pills) */
+[data-testid="stRadio"] > div {
+  gap: 0.4rem !important;
+}
+[data-testid="stRadio"] label {
+  flex: 1 !important;
+  border: 1px solid #E8E8E8 !important;
+  border-radius: 0.5rem !important;
+  padding: 0.3rem 0.4rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: #696969 !important;
+  cursor: pointer;
+  text-align: center;
+  transition: all 150ms;
+  background: white !important;
+  justify-content: center !important;
+}
+[data-testid="stRadio"] label:has(input:checked) {
+  background: #E23744 !important;
+  color: white !important;
+  border-color: #E23744 !important;
+}
+[data-testid="stRadio"] label > div:first-child { display: none !important; }
+
+/* Toggle */
+[data-testid="stToggle"] p {
+  font-size: 0.875rem !important;
+  color: #1C1C1C !important;
+}
+
+/* Primary button — Zomato red */
+[data-testid="stButton"] > button[kind="primary"] {
+  background-color: #E23744 !important;
+  border: none !important;
+  border-radius: 0.75rem !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  padding: 0.6rem 1rem !important;
+  color: white !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+  transition: background 150ms, box-shadow 150ms !important;
+}
+[data-testid="stButton"] > button[kind="primary"]:hover {
+  background-color: #c62f3c !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18) !important;
+}
+
+/* Secondary (Reset) button */
+[data-testid="stButton"] > button[kind="secondary"] {
+  border: 1px solid #E8E8E8 !important;
+  border-radius: 0.75rem !important;
+  color: #696969 !important;
+  font-size: 0.875rem !important;
+  background: white !important;
+}
+[data-testid="stButton"] > button[kind="secondary"]:hover {
+  border-color: #E23744 !important;
+  color: #E23744 !important;
+}
+
+/* ── Summary banner ── */
+.zai-summary {
+  background: linear-gradient(to right, #fff7ed, #fff1f2);
+  border: 1px solid #fed7aa;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.zai-summary .icon { font-size: 1.4rem; flex-shrink: 0; line-height: 1.4; }
+.zai-summary .title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1C1C1C;
+  margin-bottom: 0.2rem;
+}
+.zai-summary .body {
+  font-size: 0.875rem;
+  color: #696969;
+  line-height: 1.55;
+}
+
+/* ── Restaurant card ── */
+.zai-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border: 1px solid #E8E8E8;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  transition: box-shadow 150ms;
+}
+.zai-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.13); }
+.zai-card .accent { height: 6px; background: linear-gradient(to right, #E23744, #FC8019); }
+.zai-card .body { padding: 1.1rem 1.25rem 1.25rem; position: relative; }
+
+/* Rank badge */
+.rank-badge {
+  position: absolute; top: 0.75rem; left: 0.75rem;
+  width: 1.65rem; height: 1.65rem;
+  border-radius: 50%;
+  background: #E23744; color: white;
+  font-size: 0.7rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+
+/* Header row */
+.rest-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-left: 2rem; }
+.rest-name { font-weight: 700; font-size: 1rem; line-height: 1.25; color: #1C1C1C; }
+.rest-loc { font-size: 0.72rem; color: #696969; margin-top: 0.2rem; }
+
+/* Rating badge */
+.rating-badge {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+  flex-shrink: 0;
+}
+.rgb-green  { background: #3D9B6D; color: white; }
+.rgb-orange { background: #FC8019; color: white; }
+.rgb-red    { background: #ef4444; color: white; }
+
+/* Cuisine tags */
+.cuisine-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; }
+.ctag {
+  padding: 0.1rem 0.5rem;
+  background: #fff1f2; color: #E23744;
+  border: 1px solid #fecdd3;
+  border-radius: 9999px;
+  font-size: 0.7rem; font-weight: 500;
+}
+
+/* Cost */
+.rest-cost { font-size: 0.72rem; color: #696969; margin-top: 0.6rem; }
+.rest-cost strong { color: #1C1C1C; font-weight: 600; }
+
+/* Details */
+.details-sep { border: none; border-top: 1px solid #E8E8E8; margin: 0.9rem 0 0.7rem; }
+.why-row { display: flex; gap: 0.5rem; align-items: flex-start; }
+.detail-label { font-size: 0.7rem; font-weight: 600; color: #696969; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
+.detail-text  { font-size: 0.85rem; color: #1C1C1C; line-height: 1.5; }
+.highlight-row {
+  display: flex; gap: 0.5rem; align-items: flex-start;
+  background: #fff7ed; border-radius: 0.5rem; padding: 0.6rem; margin-top: 0.5rem;
+}
+.hl-label { font-size: 0.7rem; font-weight: 600; color: #FC8019; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
+
+/* ── Empty state ── */
+.zai-empty { text-align: center; padding: 4rem 1rem; }
+.zai-empty .icon { font-size: 4rem; display: block; margin-bottom: 0.75rem; }
+.zai-empty h2 { font-size: 1.2rem; font-weight: 700; color: #1C1C1C; margin-bottom: 0.5rem; }
+.zai-empty p  { font-size: 0.875rem; color: #696969; max-width: 22rem; margin: 0 auto; line-height: 1.6; }
+
+/* Remove Streamlit widget bottom-margin clutter */
+[data-testid="stSelectbox"],
+[data-testid="stNumberInput"],
+[data-testid="stTextArea"],
+[data-testid="stRadio"],
+[data-testid="stToggle"] { margin-bottom: 0.1rem !important; }
+</style>
+""", unsafe_allow_html=True)
+
+# ── Load / build index (cached across sessions) ───────────────────────────────
 @st.cache_resource(
-    show_spinner="Loading restaurant index… (first run downloads & indexes ~51k restaurants — takes a few minutes)"
+    show_spinner="Loading restaurant index… (first run downloads & indexes ~51 k restaurants — takes a few minutes)"
 )
 def _load_collection():
-    """Build the vector index from HuggingFace if needed, then return the collection."""
     from scripts.build_index import main as build_index
     build_index()
     from src.indexing.vector_store import get_client, get_collection
@@ -65,7 +331,6 @@ def _load_collection():
 
 @st.cache_data(show_spinner=False)
 def _load_options(_collection) -> tuple[list[str], list[str]]:
-    """Paginate collection metadata to extract unique cuisines and locations."""
     cuisines: set[str] = set()
     locations: set[str] = set()
     offset, batch = 0, 5_000
@@ -88,93 +353,121 @@ def _load_options(_collection) -> tuple[list[str], list[str]]:
     return sorted(cuisines), sorted(locations)
 
 
-# Load (triggers index build on first run)
 collection = _load_collection()
 cuisines_all, locations_all = _load_options(collection)
 
-# ---------------------------------------------------------------------------
-# Engine imports (after sys.path is configured)
-# ---------------------------------------------------------------------------
+# ── Hero banner ───────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="zai-hero">
+  <h1>Zomato AI</h1>
+  <p>Tell us what you're craving. We'll find the perfect place.</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Preference form ───────────────────────────────────────────────────────────
+col_loc, col_cui = st.columns(2)
+
+with col_loc:
+    st.markdown('<div class="zai-label">Location <span class="req">*</span></div>', unsafe_allow_html=True)
+    selected_location = st.selectbox(
+        "location", [""] + locations_all,
+        format_func=lambda x: "Select a location" if x == "" else x,
+        label_visibility="collapsed",
+    )
+
+with col_cui:
+    st.markdown('<div class="zai-label">Cuisine <span class="req">*</span></div>', unsafe_allow_html=True)
+    selected_cuisine = st.selectbox(
+        "cuisine", [""] + cuisines_all,
+        format_func=lambda x: "Select a cuisine" if x == "" else x,
+        label_visibility="collapsed",
+    )
+
+st.markdown('<div class="zai-label">Max budget (₹ for two)</div>', unsafe_allow_html=True)
+max_price = st.number_input(
+    "max_price", min_value=0, max_value=10_000, value=0, step=100,
+    placeholder="e.g. 800 (optional)",
+    label_visibility="collapsed",
+)
+
+st.markdown('<div class="zai-label">Minimum rating</div>', unsafe_allow_html=True)
+rating_choice = st.radio(
+    "min_rating",
+    ["Any", "★ 3.0+", "★ 3.5+", "★ 4.0+", "★ 4.5+"],
+    horizontal=True,
+    label_visibility="collapsed",
+)
+_rating_map = {"Any": 0.0, "★ 3.0+": 3.0, "★ 3.5+": 3.5, "★ 4.0+": 4.0, "★ 4.5+": 4.5}
+min_rating = _rating_map[rating_choice]
+
+st.markdown('<div class="zai-label">Meal type</div>', unsafe_allow_html=True)
+meal_type = st.selectbox(
+    "meal_type",
+    ["", "Dine-out", "Delivery", "Buffet", "Cafes", "Desserts", "Pubs and bars"],
+    format_func=lambda x: "Any type" if x == "" else x,
+    label_visibility="collapsed",
+)
+
+online_order = st.toggle("Online ordering available")
+book_table   = st.toggle("Table booking available")
+
+st.markdown('<div class="zai-label">Anything specific?</div>', unsafe_allow_html=True)
+free_text = st.text_area(
+    "free_text",
+    placeholder='e.g. "Romantic rooftop with cocktails"',
+    height=80,
+    label_visibility="collapsed",
+)
+
+btn_col, reset_col = st.columns([5, 1])
+with btn_col:
+    search_clicked = st.button("🔍  Find Restaurants", type="primary", use_container_width=True)
+with reset_col:
+    reset_clicked = st.button("Reset", use_container_width=True)
+
+if reset_clicked:
+    st.rerun()
+
+# ── Empty state ───────────────────────────────────────────────────────────────
+if not search_clicked:
+    st.markdown("""
+    <div class="zai-empty">
+      <span class="icon">🍽️</span>
+      <h2>Ready to explore?</h2>
+      <p>Fill in your preferences above and hit <strong>Find Restaurants</strong>
+         to get recommendations tailored to your taste.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.stop()
+
+# ── Validation ────────────────────────────────────────────────────────────────
+if not selected_location:
+    st.error("Please select a location.")
+    st.stop()
+if not selected_cuisine:
+    st.error("Please select a cuisine.")
+    st.stop()
+
+# ── Engine imports ────────────────────────────────────────────────────────────
 from src.engine.engine import recommend as run_engine
 from src.llm.groq_client import call_llm
 from src.llm.prompt_builder import build_prompts
 from src.llm.response_parser import parse_response
 from src.preferences.models import UserPreference
 
-# ---------------------------------------------------------------------------
-# Sidebar — Preferences
-# ---------------------------------------------------------------------------
-st.sidebar.title("🍽️ Your Preferences")
-
-selected_cuisines: list[str] = st.sidebar.multiselect(
-    "Cuisine(s)",
-    options=cuisines_all,
-    placeholder="Any cuisine",
-)
-
-selected_location: str = st.sidebar.selectbox(
-    "Neighbourhood",
-    options=[""] + locations_all,
-    format_func=lambda x: "Any location" if x == "" else x,
-)
-
-col1, col2 = st.sidebar.columns(2)
-with col1:
-    max_price = int(st.number_input(
-        "Max budget (₹ for two)",
-        min_value=0, max_value=10_000, value=0, step=100,
-        help="Leave 0 for no limit",
-    ))
-with col2:
-    min_rating = float(st.number_input(
-        "Min rating ★",
-        min_value=0.0, max_value=5.0, value=0.0, step=0.5,
-        help="Leave 0 for no minimum",
-    ))
-
-meal_type: str = st.sidebar.selectbox(
-    "Meal type",
-    options=["", "Dine-out", "Delivery", "Buffet", "Cafes", "Desserts", "Pubs and bars"],
-    format_func=lambda x: "Any" if x == "" else x,
-)
-
-online_order = st.sidebar.toggle("Online ordering available")
-book_table   = st.sidebar.toggle("Table booking available")
-
-free_text: str = st.sidebar.text_area(
-    "Anything else?",
-    placeholder="e.g. rooftop seating, good for dates, vegetarian-friendly…",
-    height=80,
-)
-
-search_clicked = st.sidebar.button(
-    "Find Restaurants 🔍", use_container_width=True, type="primary"
-)
-
-# ---------------------------------------------------------------------------
-# Main area
-# ---------------------------------------------------------------------------
-st.title("🍽️ Bangalore Restaurant Recommender")
-st.caption("Powered by Zomato data · Groq LLaMA 3.3 · ChromaDB")
-
-if not search_clicked:
-    st.info("Set your preferences in the sidebar and click **Find Restaurants** to get started.")
-    st.stop()
-
-# Build UserPreference object
 prefs = UserPreference(
-    cuisine=selected_cuisines or None,
+    cuisine=[selected_cuisine],
     location=selected_location or None,
     max_price=max_price if max_price > 0 else None,
-    min_rating=min_rating if min_rating > 0 else None,
+    min_rating=min_rating if min_rating > 0.0 else None,
     meal_type=meal_type or None,
     online_order=True if online_order else None,
     book_table=True if book_table else None,
     free_text=free_text.strip() or None,
 )
 
+# ── Run engine ────────────────────────────────────────────────────────────────
 with st.spinner("Finding the best restaurants for you…"):
-    # Phase 4 — retrieve + rank
     try:
         candidates = run_engine(prefs, collection=collection)
     except Exception as exc:
@@ -182,10 +475,15 @@ with st.spinner("Finding the best restaurants for you…"):
         st.stop()
 
     if not candidates:
-        st.warning("No restaurants found. Try relaxing your filters.")
+        st.markdown("""
+        <div class="zai-empty">
+          <span class="icon">🔍</span>
+          <h2>No restaurants found</h2>
+          <p>Try relaxing your filters — broader location or higher budget.</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.stop()
 
-    # Phase 5 — LLM
     try:
         system_prompt, user_prompt = build_prompts(prefs, candidates)
         raw_output = call_llm(system_prompt, user_prompt)
@@ -197,7 +495,7 @@ with st.spinner("Finding the best restaurants for you…"):
         st.error(f"LLM error: {exc}")
         st.stop()
 
-# Strip placeholders and hallucinations (mirrors FastAPI route logic)
+# ── Filter hallucinations ─────────────────────────────────────────────────────
 _PLACEHOLDERS = {"none", "null", "n/a", ""}
 candidate_names = {c.name.strip().lower() for c in candidates}
 result.recommendations = [
@@ -210,39 +508,66 @@ if not result.recommendations:
     st.warning("No restaurants matched after filtering. Try different preferences.")
     st.stop()
 
-# Summary banner
+# ── Summary banner ────────────────────────────────────────────────────────────
+count = len(result.recommendations)
 if result.summary:
-    st.success(result.summary)
+    st.markdown(f"""
+    <div class="zai-summary">
+      <span class="icon">✨</span>
+      <div>
+        <div class="title">Found {count} recommendation{"s" if count != 1 else ""} tailored to your taste</div>
+        <div class="body">{result.summary}</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.markdown(f"### Top {len(result.recommendations)} picks")
-
-
-def star_bar(rating: float) -> str:
-    full  = int(rating)
-    half  = 1 if (rating - full) >= 0.5 else 0
-    empty = 5 - full - half
-    return "★" * full + "½" * half + "☆" * empty
-
-
+# ── Restaurant cards ──────────────────────────────────────────────────────────
 for item in result.recommendations:
-    with st.container(border=True):
-        header_col, badge_col = st.columns([5, 1])
-        with header_col:
-            st.markdown(f"#### #{item.rank} &nbsp; {item.name}")
-            st.caption(f"📍 {item.location}　　🍴 {item.cuisine}")
-        with badge_col:
-            st.markdown(
-                f"<div style='text-align:right;font-size:1.5rem;color:#f5a623'>"
-                f"{star_bar(float(item.rating))}</div>"
-                f"<div style='text-align:right;color:#888'>{item.rating:.1f} / 5</div>",
-                unsafe_allow_html=True,
-            )
+    rating = float(item.rating)
+    rgb_class = "rgb-green" if rating >= 4.0 else ("rgb-orange" if rating >= 3.0 else "rgb-red")
 
-        info_col, why_col = st.columns([1, 2])
-        with info_col:
-            st.metric("Cost for two", f"₹{item.approx_cost:,}")
-        with why_col:
-            if item.why:
-                st.markdown(f"**Why this?** {item.why}")
-            if item.highlight:
-                st.markdown(f"**Must try:** 🌟 {item.highlight}")
+    cuisine_tags = "".join(
+        f'<span class="ctag">{c.strip()}</span>'
+        for c in item.cuisine.split(",") if c.strip()
+    )
+
+    details_html = ""
+    if item.why or item.highlight:
+        details_html += '<hr class="details-sep">'
+        if item.why:
+            details_html += f"""
+            <div class="why-row">
+              <span style="font-size:1rem;flex-shrink:0">💡</span>
+              <div>
+                <div class="detail-label">Why this?</div>
+                <div class="detail-text">{item.why}</div>
+              </div>
+            </div>"""
+        if item.highlight:
+            details_html += f"""
+            <div class="highlight-row" style="margin-top:0.5rem">
+              <span style="font-size:1rem;flex-shrink:0">⭐</span>
+              <div>
+                <div class="hl-label">Must Try</div>
+                <div class="detail-text">{item.highlight}</div>
+              </div>
+            </div>"""
+
+    st.markdown(f"""
+    <article class="zai-card">
+      <div class="accent"></div>
+      <div class="body">
+        <div class="rank-badge">#{item.rank}</div>
+        <div class="rest-header">
+          <div>
+            <div class="rest-name">{item.name}</div>
+            <div class="rest-loc">📍 {item.location}</div>
+          </div>
+          <span class="rating-badge {rgb_class}">★ {rating:.1f}</span>
+        </div>
+        <div class="cuisine-tags">{cuisine_tags}</div>
+        <div class="rest-cost">💰 <strong>₹{item.approx_cost:,}</strong> for two</div>
+        {details_html}
+      </div>
+    </article>
+    """, unsafe_allow_html=True)
