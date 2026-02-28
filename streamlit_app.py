@@ -142,36 +142,26 @@ header, .stAppHeader,
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
 }
 
-/* Number input — hide Streamlit ± buttons; show native ▲▼ spin arrows on hover only */
+/* Number input — show Streamlit ▲▼ step buttons only on hover */
 [data-testid="stNumberInputStepDown"],
 [data-testid="stNumberInputStepUp"] {
-  display: none !important;
+  opacity: 0 !important;
+  transition: opacity 150ms !important;
+}
+[data-testid="stNumberInput"]:hover [data-testid="stNumberInputStepDown"],
+[data-testid="stNumberInput"]:hover [data-testid="stNumberInputStepUp"] {
+  opacity: 1 !important;
 }
 [data-testid="stNumberInput"] input {
   border: 1px solid #E8E8E8 !important;
   border-radius: 0.5rem !important;
   font-size: 0.875rem !important;
-  width: 100% !important;
   background: white !important;
-  -moz-appearance: textfield !important;
 }
 [data-testid="stNumberInput"] input:focus {
   border-color: #E23744 !important;
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
   outline: none !important;
-}
-/* Hide native ▲▼ spin buttons by default */
-[data-testid="stNumberInput"] input::-webkit-outer-spin-button,
-[data-testid="stNumberInput"] input::-webkit-inner-spin-button {
-  opacity: 0;
-  cursor: pointer;
-  transition: opacity 150ms;
-  -webkit-appearance: inner-spin-button !important;
-}
-/* Show native ▲▼ spin buttons on hover */
-[data-testid="stNumberInput"]:hover input::-webkit-outer-spin-button,
-[data-testid="stNumberInput"]:hover input::-webkit-inner-spin-button {
-  opacity: 1;
 }
 
 /* Textarea */
@@ -187,11 +177,13 @@ header, .stAppHeader,
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
 }
 
-/* Radio (rating pills) — equal-width via flex-basis 0% */
+/* Radio (rating pills) — equal-width, full container width */
+[data-testid="stRadio"],
 [data-testid="stRadio"] > div {
   display: flex !important;
   flex-wrap: nowrap !important;
   gap: 0.4rem !important;
+  width: 100% !important;
 }
 [data-testid="stRadio"] label {
   flex: 1 1 0% !important;   /* basis=0 → all grow equally regardless of text length */
@@ -217,35 +209,41 @@ header, .stAppHeader,
 }
 [data-testid="stRadio"] label > div:first-child { display: none !important; }
 
-/* Toggle — label left, switch right */
-[data-testid="stToggle"] {
+/* Toggle — label left, switch pinned to far right */
+[data-testid="stToggle"],
+[data-testid="stToggle"] > div {
   width: 100% !important;
+  display: block !important;
 }
 [data-testid="stToggle"] label {
   display: flex !important;
   flex-direction: row !important;
   justify-content: space-between !important;
-  width: 100% !important;
   align-items: center !important;
-  gap: 1rem !important;
-}
-[data-testid="stToggle"] label > div:last-child {
-  margin-left: auto !important;
+  width: 100% !important;
+  gap: 0 !important;
+  cursor: pointer !important;
 }
 [data-testid="stToggle"] p {
   font-size: 0.875rem !important;
   color: #1C1C1C !important;
   flex: 1 !important;
+  margin: 0 !important;
+}
+[data-testid="stToggle"] label > div:last-child,
+[data-testid="stToggle"] label > span:last-child {
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
 }
 
-/* Primary button — Zomato red */
+/* Primary button — Zomato red (taller than secondary) */
 [data-testid="stButton"] > button[kind="primary"] {
   background-color: #E23744 !important;
   border: none !important;
   border-radius: 0.75rem !important;
   font-weight: 600 !important;
   font-size: 0.9rem !important;
-  padding: 0.6rem 1rem !important;
+  padding: 0.8rem 1rem !important;
   color: white !important;
   box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
   transition: background 150ms, box-shadow 150ms !important;
@@ -255,13 +253,14 @@ header, .stAppHeader,
   box-shadow: 0 3px 10px rgba(0,0,0,0.18) !important;
 }
 
-/* Secondary (Reset) button */
+/* Secondary (Reset) button — same width as primary, shorter height */
 [data-testid="stButton"] > button[kind="secondary"] {
   border: 1px solid #E8E8E8 !important;
   border-radius: 0.75rem !important;
   color: #696969 !important;
   font-size: 0.875rem !important;
   background: white !important;
+  padding: 0.5rem 1rem !important;
 }
 [data-testid="stButton"] > button[kind="secondary"]:hover {
   border-color: #E23744 !important;
@@ -476,7 +475,7 @@ free_text = st.text_area(
     label_visibility="collapsed",
 )
 
-btn_col, reset_col = st.columns([5, 1])
+btn_col, reset_col = st.columns([1, 1])
 with btn_col:
     search_clicked = st.button("🔍  Find Restaurants", type="primary", use_container_width=True)
 with reset_col:
