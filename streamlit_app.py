@@ -509,8 +509,8 @@ from src.preferences.models import UserPreference
 prefs = UserPreference(
     cuisine=[selected_cuisine],
     location=selected_location or None,
-    max_price=max_price if max_price > 0 else None,
-    min_rating=min_rating if min_rating > 0.0 else None,
+    max_price=max_price if max_price is not None and max_price > 0 else None,
+    min_rating=min_rating if min_rating is not None and min_rating > 0.0 else None,
     meal_type=meal_type or None,
     online_order=True if online_order else None,
     book_table=True if book_table else None,
