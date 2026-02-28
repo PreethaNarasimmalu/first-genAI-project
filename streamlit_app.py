@@ -475,7 +475,7 @@ free_text = st.text_area(
     label_visibility="collapsed",
 )
 
-btn_col, reset_col = st.columns([1, 1])
+btn_col, reset_col = st.columns([5, 1])
 with btn_col:
     search_clicked = st.button("🔍  Find Restaurants", type="primary", use_container_width=True)
 with reset_col:
