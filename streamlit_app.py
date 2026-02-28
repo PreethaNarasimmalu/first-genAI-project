@@ -236,14 +236,14 @@ header, .stAppHeader,
   flex-shrink: 0 !important;
 }
 
-/* Primary button — Zomato red (taller than secondary) */
+/* Primary button — Zomato red */
 [data-testid="stButton"] > button[kind="primary"] {
   background-color: #E23744 !important;
   border: none !important;
   border-radius: 0.75rem !important;
   font-weight: 600 !important;
   font-size: 0.9rem !important;
-  padding: 0.8rem 1rem !important;
+  padding: 0.6rem 1rem !important;
   color: white !important;
   box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
   transition: background 150ms, box-shadow 150ms !important;
@@ -253,14 +253,13 @@ header, .stAppHeader,
   box-shadow: 0 3px 10px rgba(0,0,0,0.18) !important;
 }
 
-/* Secondary (Reset) button — same width as primary, shorter height */
+/* Secondary (Reset) button */
 [data-testid="stButton"] > button[kind="secondary"] {
   border: 1px solid #E8E8E8 !important;
   border-radius: 0.75rem !important;
   color: #696969 !important;
   font-size: 0.875rem !important;
   background: white !important;
-  padding: 0.5rem 1rem !important;
 }
 [data-testid="stButton"] > button[kind="secondary"]:hover {
   border-color: #E23744 !important;
