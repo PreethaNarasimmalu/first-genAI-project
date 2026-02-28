@@ -160,9 +160,16 @@ header, .stAppHeader,
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
   outline: none !important;
 }
+/* Hide native ▲▼ spin arrows by default, show on hover */
 [data-testid="stNumberInput"] input::-webkit-outer-spin-button,
 [data-testid="stNumberInput"] input::-webkit-inner-spin-button {
-  -webkit-appearance: none !important;
+  -webkit-appearance: inner-spin-button !important;
+  opacity: 0;
+  transition: opacity 150ms;
+}
+[data-testid="stNumberInput"]:hover input::-webkit-outer-spin-button,
+[data-testid="stNumberInput"]:hover input::-webkit-inner-spin-button {
+  opacity: 1;
 }
 
 /* Textarea */
