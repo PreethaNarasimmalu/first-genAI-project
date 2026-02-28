@@ -441,15 +441,21 @@ max_price = st.number_input(
 )
 
 st.markdown('<div class="zai-label">Minimum rating <span style="font-weight:400;text-transform:none;color:#9ca3af">(optional)</span></div>', unsafe_allow_html=True)
-rating_choice = st.radio(
-    "min_rating",
-    ["★ 3+", "★ 3.5+", "★ 4+", "★ 4.5+"],
-    horizontal=True,
-    index=None,
-    label_visibility="collapsed",
-)
-_rating_map = {"★ 3+": 3.0, "★ 3.5+": 3.5, "★ 4+": 4.0, "★ 4.5+": 4.5}
-min_rating = _rating_map[rating_choice] if rating_choice else 0.0
+if "min_rating_choice" not in st.session_state:
+    st.session_state.min_rating_choice = None
+_rating_cols = st.columns(4, gap="small")
+_rating_options = [("★ 3+", 3.0), ("★ 3.5+", 3.5), ("★ 4+", 4.0), ("★ 4.5+", 4.5)]
+for _col, (_label, _val) in zip(_rating_cols, _rating_options):
+    _selected = st.session_state.min_rating_choice == _val
+    if _col.button(
+        _label,
+        key=f"rating_{_val}",
+        use_container_width=True,
+        type="primary" if _selected else "secondary",
+    ):
+        st.session_state.min_rating_choice = None if _selected else _val
+        st.rerun()
+min_rating = st.session_state.min_rating_choice or 0.0
 
 st.markdown('<div class="zai-label">Meal type <span style="font-weight:400;text-transform:none;color:#9ca3af">(optional)</span></div>', unsafe_allow_html=True)
 meal_type = st.selectbox(
