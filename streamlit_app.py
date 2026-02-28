@@ -142,26 +142,27 @@ header, .stAppHeader,
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
 }
 
-/* Number input — show Streamlit ▲▼ step buttons only on hover */
+/* Number input — hide Streamlit ± buttons */
 [data-testid="stNumberInputStepDown"],
 [data-testid="stNumberInputStepUp"] {
-  opacity: 0 !important;
-  transition: opacity 150ms !important;
-}
-[data-testid="stNumberInput"]:hover [data-testid="stNumberInputStepDown"],
-[data-testid="stNumberInput"]:hover [data-testid="stNumberInputStepUp"] {
-  opacity: 1 !important;
+  display: none !important;
 }
 [data-testid="stNumberInput"] input {
   border: 1px solid #E8E8E8 !important;
   border-radius: 0.5rem !important;
   font-size: 0.875rem !important;
+  width: 100% !important;
   background: white !important;
+  -moz-appearance: textfield !important;
 }
 [data-testid="stNumberInput"] input:focus {
   border-color: #E23744 !important;
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
   outline: none !important;
+}
+[data-testid="stNumberInput"] input::-webkit-outer-spin-button,
+[data-testid="stNumberInput"] input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
 }
 
 /* Textarea */
