@@ -260,6 +260,7 @@ header, .stAppHeader,
   color: #696969 !important;
   font-size: 0.875rem !important;
   background: white !important;
+  padding: 0.6rem 1rem !important;
 }
 [data-testid="stButton"] > button[kind="secondary"]:hover {
   border-color: #E23744 !important;
