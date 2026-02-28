@@ -145,12 +145,11 @@ header, .stAppHeader,
 /* Number input — step buttons hidden by default, appear on hover */
 [data-testid="stNumberInputStepDown"],
 [data-testid="stNumberInputStepUp"] {
-  opacity: 0 !important;
-  transition: opacity 150ms !important;
+  display: none !important;
 }
 [data-testid="stNumberInput"]:hover [data-testid="stNumberInputStepDown"],
 [data-testid="stNumberInput"]:hover [data-testid="stNumberInputStepUp"] {
-  opacity: 1 !important;
+  display: flex !important;
 }
 [data-testid="stNumberInput"] input {
   border: 1px solid #E8E8E8 !important;
