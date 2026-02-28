@@ -226,6 +226,12 @@ header, .stAppHeader,
   margin: 0 !important;
 }
 
+/* Rating buttons — match height of number input */
+[data-testid="stElementContainer"]:has(.zai-rating-row) + [data-testid="stElementContainer"] button {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+}
+
 /* Primary button — Zomato red */
 [data-testid="stButton"] > button[kind="primary"] {
   background-color: #E23744 !important;
@@ -438,6 +444,7 @@ max_price = st.number_input(
 st.markdown('<div class="zai-label">Minimum rating <span style="font-weight:400;text-transform:none;color:#9ca3af">(optional)</span></div>', unsafe_allow_html=True)
 if "min_rating_choice" not in st.session_state:
     st.session_state.min_rating_choice = None
+st.markdown('<div class="zai-rating-row"></div>', unsafe_allow_html=True)
 _rating_cols = st.columns(4, gap="small")
 _rating_options = [("★ 3+", 3.0), ("★ 3.5+", 3.5), ("★ 4+", 4.0), ("★ 4.5+", 4.5)]
 for _col, (_label, _val) in zip(_rating_cols, _rating_options):
