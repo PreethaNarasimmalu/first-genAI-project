@@ -212,7 +212,7 @@ header, .stAppHeader,
 }
 [data-testid="stToggle"] label {
   display: flex !important;
-  flex-direction: row !important;
+  flex-direction: row-reverse !important;
   justify-content: space-between !important;
   align-items: center !important;
   width: 100% !important;
@@ -224,11 +224,6 @@ header, .stAppHeader,
   color: #1C1C1C !important;
   flex: 1 !important;
   margin: 0 !important;
-}
-[data-testid="stToggle"] label > div:last-child,
-[data-testid="stToggle"] label > span:last-child {
-  margin-left: auto !important;
-  flex-shrink: 0 !important;
 }
 
 /* Primary button — Zomato red */
