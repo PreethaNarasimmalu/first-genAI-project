@@ -142,25 +142,16 @@ header, .stAppHeader,
   box-shadow: 0 0 0 2px rgba(226,55,68,0.18) !important;
 }
 
-/* Number input — step buttons hidden by default, appear on hover */
+/* Number input — hide Streamlit ± buttons; browser shows native spin arrows naturally */
 [data-testid="stNumberInputStepDown"],
 [data-testid="stNumberInputStepUp"] {
   display: none !important;
-}
-[data-testid="stNumberInput"]:hover [data-testid="stNumberInputStepDown"],
-[data-testid="stNumberInput"]:hover [data-testid="stNumberInputStepUp"] {
-  display: flex !important;
 }
 [data-testid="stNumberInput"] input {
   border: 1px solid #E8E8E8 !important;
   border-radius: 0.5rem !important;
   font-size: 0.875rem !important;
   background: white !important;
-  -moz-appearance: textfield !important;
-}
-[data-testid="stNumberInput"] input::-webkit-outer-spin-button,
-[data-testid="stNumberInput"] input::-webkit-inner-spin-button {
-  -webkit-appearance: none !important;
 }
 [data-testid="stNumberInput"] input:focus {
   border-color: #E23744 !important;
